@@ -1,7 +1,34 @@
 <template>
   <main>
-    <h1>Hello World</h1>
-
+    <v-container justify-center class="w-50">
+      <v-row no-gutters justify="center" align="center" class="pt-4 pb-4">
+          <img class="brand" src="/pt-logo-small.png" />
+      </v-row>
+      <v-row no-gutters justify="center" class="pb-12">
+          <span class="text-h3 text-center font-weight-black">
+            AI Detector<br>Efficacy Research Tool
+          </span>
+      </v-row>
+      <div class="glass">
+        <p class="text-h4 font-weight-bold pt-6 pl-6 pr-6 pb-4">What is this tool?</p>
+        <p class="text-h6 font-weight-medium pb-6 pl-6 pr-6">
+          The tool takes a set of text files and runs them through a number of
+          AI detectors. It then outputs the results to a CSV file. The tool also
+          generates a confusion matrix to show the accuracy of the detectors. 
+          
+          But what is a confusion matrix? A confusion matrix is a table that is
+          used to describe the performance of a classification model. It shows
+          the number of correct and incorrect predictions made by the
+          classification model compared to the actual outcomes. 
+          
+          This table is
+          extremely useful for comparing the performance of different detectors
+          as it will show the true positives, false positives, true negatives
+          and false negatives for each detector. This allows you to see which
+          detectors are the most accurate.
+        </p>
+      </div>
+    </v-container>
   </main>
 </template>
 
@@ -9,6 +36,55 @@
 </script>
 
 
-<style scoped>
+<style>
+main {
+  background-color: var(--dark);
+  /* color: var(--faint-blue); */
+  color: white;
+  background-image: linear-gradient(#2b2154, rgba(43, 33, 84, 0) 61%),
+    linear-gradient(rgba(0, 0, 0, 0) 24%, rgba(120, 89, 255, 0.3)),
+    linear-gradient(rgba(43, 33, 84, 0.4), rgba(43, 33, 84, 0.4)),
+    linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    url(https://assets-global.website-files.com/63ee996…/63ee9c9…_texture-1.webp);
+  background-position:
+    0 0,
+    0 0,
+    0 0,
+    0 0,
+    50% 0;
+  background-size: auto, auto, auto, auto, 1600px;
+  min-width: 100vw;
+  min-height: 100vh;
+}
 
+.brand {
+  width: 600px;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+:root {
+  --light-blue-text: #474c6e;
+  --dark: black;
+  --dark-purple: #2b2154;
+  --background-tint: #f7faff;
+  --faint-blue: #dadfed;
+  --darker-purple: #1b1240;
+  --darker-blue: #0a0d25;
+  --darkest-purple: #0b0426;
+  --lavender: #dfe8ff;
+  --light-purple: #7859ff;
+  --ice-green: #8efff2;
+  --midnight-blue: #2d335d;
+  --bright-orange: #ffbb59;
+  --light-dimmed-text: #babcd1;
+  --mid-purple: #5a4d8e;
+}
 </style>
