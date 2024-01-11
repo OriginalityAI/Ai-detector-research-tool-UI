@@ -1,0 +1,9 @@
+@use 'vuetify/settings' with (
+  // only the font variables work
+  $body-font-family: 'Satoshi',
+  $heading-font-family: 'Satoshi',
+  $button-text-transform: 'unset',
+  $button-font-weight: 900,
+  $button-font-size: '17px'
+);
+@import url('https://fonts.cdnfonts.com/css/satoshi');
