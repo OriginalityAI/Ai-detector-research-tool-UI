@@ -9,7 +9,7 @@
             AI Detector<br>Efficacy Research Tool
           </span>
       </v-row>
-      <div class="glass">
+      <div class="glass sheet">
         <p class="text-h4 font-weight-bold pt-6 pl-6 pr-6 pb-4">What is this tool?</p>
         <p class="text-h6 font-weight-medium pb-6 pl-6 pr-6">
           The tool takes a set of text files and runs them through a number of
@@ -28,11 +28,15 @@
           detectors are the most accurate.
         </p>
       </div>
+      <InputSheet />
+
     </v-container>
   </main>
 </template>
 
 <script setup lang="ts">
+import InputSheet from './components/InputSheet.vue';
+
 </script>
 
 
@@ -63,7 +67,6 @@ main {
 
 .glass {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
