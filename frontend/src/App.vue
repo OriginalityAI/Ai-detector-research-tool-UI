@@ -9,27 +9,29 @@
             AI Detector<br>Efficacy Research Tool
           </span>
       </v-row>
-      <div class="glass sheet">
-        <p class="text-h4 font-weight-bold pt-6 pl-6 pr-6 pb-4">What is this tool?</p>
-        <p class="text-h6 font-weight-medium pb-6 pl-6 pr-6">
-          The tool takes a set of text files and runs them through a number of
-          AI detectors. It then outputs the results to a CSV file. The tool also
-          generates a confusion matrix to show the accuracy of the detectors. 
-          
-          But what is a confusion matrix? A confusion matrix is a table that is
-          used to describe the performance of a classification model. It shows
-          the number of correct and incorrect predictions made by the
-          classification model compared to the actual outcomes. 
-          
-          This table is
-          extremely useful for comparing the performance of different detectors
-          as it will show the true positives, false positives, true negatives
-          and false negatives for each detector. This allows you to see which
-          detectors are the most accurate.
-        </p>
-      </div>
+      <v-row no-gutters class="pb-12">
+        <div class="glass sheet">
+          <p class="text-h4 font-weight-bold pt-6 pl-6 pr-6 pb-4">What is this tool?</p>
+          <p class="text-h6 font-weight-medium pb-6 pl-6 pr-6">
+            The tool takes a set of text files and runs them through a number of
+            AI detectors. It then outputs the results to a CSV file. The tool also
+            generates a confusion matrix to show the accuracy of the detectors. 
+            
+            But what is a confusion matrix? A confusion matrix is a table that is
+            used to describe the performance of a classification model. It shows
+            the number of correct and incorrect predictions made by the
+            classification model compared to the actual outcomes. 
+            
+            This table is
+            extremely useful for comparing the performance of different detectors
+            as it will show the true positives, false positives, true negatives
+            and false negatives for each detector. This allows you to see which
+            detectors are the most accurate.
+          </p>
+        </div>
+      </v-row>
       <InputSheet />
-
+      
     </v-container>
   </main>
 </template>

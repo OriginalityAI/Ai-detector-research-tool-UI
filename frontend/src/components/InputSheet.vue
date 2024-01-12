@@ -1,5 +1,5 @@
 <template>
-  <v-container class="pa-0">
+  <v-container class="pt-0 px-0 pb-12">
     <v-sheet color="#fafafa" class="sheet">
       <v-form @submit.prevent="handleSubmit(input)">
         <v-row no-gutters align="center" class="pt-6 px-6 pb-6">
