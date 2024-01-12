@@ -1,6 +1,7 @@
 import csv
 import math
 import os
+from anyio import sleep
 import pandas as pd
 import requests
 from typing import Any, Dict, List
@@ -319,6 +320,7 @@ class HandleInput:
             # Get the API's settings from the master dictionary
             api_info = API_ENDPOINTS[api_name]
 
+            sleep(1)
             # Update the API key in the post_parameters dictionary
             key_location = api_info["post_parameters"]["API_KEY_POINTER"]["location"]
             if key_location == "headers":
@@ -332,6 +334,7 @@ class HandleInput:
             del api_info["post_parameters"]["API_KEY_POINTER"]
             # Add the modified API info to the api_settings dictionary
             api_settings[api_name] = api_info
+        print(api_settings)
         return api_settings
 
     def handle_csv(self, input_csv, output_csv=None):
@@ -363,67 +366,6 @@ class HandleInput:
             else:
                 set_headers(output_csv, "txt")
         return output_csv, input_csv
-
-    def get_file_paths(self):
-        """Prompt user for file paths.
-
-        Prompts user input for the AI text, human text, input CSV,
-        and output CSV file paths.
-
-        Returns
-        -------
-            ai_directory: AI text directory path
-            human_directory: Human text directory path
-            input_csv: Input CSV file path
-            output_csv: Output CSV file path
-        """
-        ai_directory = input("Enter the directory path for AI text files: ")
-        human_directory = input("Enter the directory path for human text files: ")
-        input_csv = input("Enter the input CSV file path: ")
-        output_csv = input("Enter the output CSV file name: ")
-
-        return ai_directory, human_directory, input_csv, output_csv
-
-    def get_API_input(self):
-        """Get API settings from user.
-
-        Prompts user for selection of APIs and API keys. Can read
-        API keys from env variables if enabled.
-
-        Returns
-        -------
-            selected_endpoints: Dictionary of selected API endpoints
-            writer_organization_id: Writer API organization ID
-            copyleaks_scan_id: Copyleaks API scan ID
-        """
-        writer_organization_id = None
-        copyleaks_scan_id = None
-        selected_endpoints = {}
-
-        isUsingEnv = input("Are you using environment variables? (Y/N): ")
-        if isUsingEnv.upper() == "Y":
-            for api_name in API_ENDPOINTS:
-                is_selected = input(f"Type Y/N to select {api_name} API: ")
-                if is_selected.upper() == "Y":
-                    if api_name == "Writer":
-                        writer_organization_id = os.getenv("WRITER_ORGANIZATION_ID")
-                    elif api_name == "Copyleaks":
-                        copyleaks_scan_id = os.getenv("COPYLEAKS_SCAN_ID")
-                    selected_endpoints[api_name] = ""
-        else:
-            for api_name in API_ENDPOINTS:
-                is_selected = input(f"Type Y/N to select {api_name} API: ")
-                if is_selected.upper() == "Y":
-                    if api_name == "Writer":
-                        writer_organization_id = input("Please enter your Organization ID: ")
-                    elif api_name == "Copyleaks":
-                        copyleaks_scan_id = input("Please enter a Copyleaks scan ID: ")
-                    api_info = input("Please enter your API key: ")
-                    if api_info is None:
-                        print("Invalid API Key")
-                        break
-                    selected_endpoints[api_name] = api_info
-        return selected_endpoints, writer_organization_id, copyleaks_scan_id
 
     def get_input(self):
         """
@@ -464,7 +406,7 @@ class HandleInput:
         ]
 
 
-def text_analyzer_main():
+def text_analyzer_main(selected_endpoints: list, input_csv: str = "") -> str:
     """
     main function that runs the text analyzer
 
@@ -476,26 +418,27 @@ def text_analyzer_main():
     -------
     output_csv: the output CSV file path
     """
-    get_user_input = HandleInput()
-    print("Welcome to the API Interaction Program. Please check the following API endpoints you wish to use: ")
-    (
-        api_settings,
-        ai_directory,
-        human_directory,
-        output_csv,
-        writer_organization_id,
-        copyleaks_scan_id,
-        input_csv,
-    ) = get_user_input.get_input()
+    
+    # TODO No longer need this as the input will be sent from the frontend
+    
+    # (
+    #     api_settings,
+    # ) = get_user_input.get_input()
+    
+    output_csv = "output.csv"
+    writer_organization_id = os.getenv('WRITER_ORGANIZATION_ID')
+    copyleaks_scan_id = os.getenv('COPYLEAKS_SCAN_ID')
+    api_settings = HandleInput().api_constructor(selected_endpoints)
+    
 
     for api_name, api in api_settings.items():
         text_analyzer = TextAnalyzer(output_csv, api, api_name, writer_organization_id, copyleaks_scan_id)
         if input_csv != "":
             text_analyzer.process_files(input_csv, "", True)
-        if ai_directory != "":
-            print(f"🤖 Processing AI files using {api_name}...")
-            text_analyzer.process_files(ai_directory, "AI")
-        if human_directory != "":
-            print(f"👨‍💻 Processing human files using {api_name}...")
-            text_analyzer.process_files(human_directory, "Human")
+        # if ai_directory != "":
+        #     print(f"🤖 Processing AI files using {api_name}...")
+        #     text_analyzer.process_files(ai_directory, "AI")
+        # if human_directory != "":
+        #     print(f"👨‍💻 Processing human files using {api_name}...")
+        #     text_analyzer.process_files(human_directory, "Human")
     return output_csv
