@@ -1,7 +1,6 @@
 import csv
 import math
 import os
-from anyio import sleep
 import pandas as pd
 import requests
 from typing import Any, Dict, List
@@ -158,7 +157,19 @@ class TextAnalyzer:
         try:
             if is_csv:
                 df = pd.read_csv(input_path)
-
+                with open(output_csv, "a", newline="", encoding="UTF-8") as file:
+                    writer = csv.writer(file)
+                    writer.writerow(
+                        [
+                            "Text Type",
+                            "API Name",
+                            'id',
+                            "dataset",
+                            "ai_score",
+                            "human_score",
+                            "Error_message",
+                        ]
+                    )
                 for index, row in df.iterrows():
                     text_type = "Human" if "human" in row["dataset"].lower() else "AI"
                     text = row["text"]
@@ -320,7 +331,6 @@ class HandleInput:
             # Get the API's settings from the master dictionary
             api_info = API_ENDPOINTS[api_name]
 
-            sleep(1)
             # Update the API key in the post_parameters dictionary
             key_location = api_info["post_parameters"]["API_KEY_POINTER"]["location"]
             if key_location == "headers":
