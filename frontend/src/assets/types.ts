@@ -1,15 +1,30 @@
 export type UserInput = {
-  csv: File | null;
-  detectors: Detector;
+  csv: {
+    name: string
+    file: File | null
+  }
+  detectors: Detectors
 }
 
-export type Detector = {
+export type Detectors = {
   [detectorName: string]: {
-    selected: boolean;
-    key: string;
-    additionalKey?: {
-      name: string,
-      value: string
-    } | undefined;
+    selected: boolean
+    key: string
+    additionalKey?:
+      | {
+          name: string
+          value: string
+        }
+      | undefined
   }
+}
+
+export type DetectorItem = {
+  name: string
+  selected: boolean;
+  key: string;
+  additionalKey?: {
+    name: string,
+    value: string
+  } | undefined;
 }

@@ -5,10 +5,21 @@ import type { UserInput } from '@/assets/types'
 
 export const useInputStore = defineStore('inputStore', () => {
   const input: Ref<UserInput> = ref({
-    csv: null,
+    csv: {
+      name: '',
+      file: null,
+    },
     detectors: {
       Originality: {
         selected: true,
+        key: ''
+      },
+      GPTZero: {
+        selected: false,
+        key: ''
+      },
+      Sapling: {
+        selected: false,
         key: ''
       },
       Copyleaks: {
@@ -19,15 +30,7 @@ export const useInputStore = defineStore('inputStore', () => {
           value: ''
         }
       },
-      GPTZero: {
-        selected: false,
-        key: ''
-      },
-      Sapling: {
-        selected: false,
-        key: ''
-      },
-      Writers: {
+      Writer: {
         selected: false,
         key: '',
         additionalKey: {
