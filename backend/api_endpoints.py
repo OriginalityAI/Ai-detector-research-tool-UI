@@ -13,14 +13,14 @@ COPYLEAKS_API_KEY = os.getenv("COPYLEAKS_API_KEY")
 
 # Different endpoints and their corresponding API keys, versions and request parameters
 API_ENDPOINTS = {
-    "Originality": {
+    "ORIGINALITY": {
         "post_parameters": {
             "endpoint": "https://api.originality.ai/api/v1/scan/ai",
             "body": {"content": "sample text", "aiModelVersion": "1"},
             "headers": {"X-OAI-API-KEY": "", "Accept": "application/json"},
             "API_KEY_POINTER": {
                 "location": "headers",
-                "value": ORIGINALITY_API_KEY,
+                "value": '',
                 "key_name": "X-OAI-API-KEY",
             },
             "text_key": "content",
@@ -38,7 +38,7 @@ API_ENDPOINTS = {
         "post_parameters": {
             "endpoint": "https://api.sapling.ai/api/v1/aidetect",
             "body": {"text": "", "key": ""},
-            "API_KEY_POINTER": {"location": "body", "value": SAPLING_API_KEY, "key_name": "key"},
+            "API_KEY_POINTER": {"location": "body", "value": '', "key_name": "key"},
             "text_key": "text",
         },
         "response": {"200": {"score": "score"}},
@@ -50,7 +50,7 @@ API_ENDPOINTS = {
             "body": {"input": "Sample"},
             "API_KEY_POINTER": {
                 "location": "headers",
-                "value": WRITER_API_KEY,
+                "value": '',
                 "key_name": "Authorization",
             },
             "text_key": "input",
@@ -64,7 +64,7 @@ API_ENDPOINTS = {
             "headers": {"x-api-key": "", "Content-Type": "application/json"},
             "API_KEY_POINTER": {
                 "location": "headers",
-                "value": GPTZERO_API_KEY,
+                "value": '',
                 "key_name": "x-api-key",
             },
             "text_key": "document",
@@ -97,7 +97,7 @@ API_ENDPOINTS = {
             "body": {"text": "Sample"},
             "API_KEY_POINTER": {
                 "location": "headers",
-                "value": "Bearer " + COPYLEAKS_API_KEY,
+                "value": "Bearer " + '',
                 "key_name": "Authorization",
             },
             "text_key": "text",
