@@ -33,7 +33,7 @@
           <v-divider thickness="2" class="ml-4 mr-2"></v-divider>
         </v-col>
       </v-row>
-      <DetectorInfo v-for="item in inputStore.detectorTable" :key="item.name" :item="item" />
+      <DetectorInfo v-for="(item) in inputStore.detectorTable" :key="item.name" :item="item" @update-item="handleUpdate(item.name, $event)" />
     </v-sheet>
   </v-container>
 </template>
@@ -42,12 +42,26 @@ import { useInputStore } from '@/stores/inputStore'
 import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue';
 import DetectorInfo from './DetectorInfo.vue';
+import type { Detector } from '@/assets/types';
 
 const inputStore = useInputStore();
 
 const { input } = storeToRefs(inputStore);
 const { detectors } = input.value;
 
-onMounted(() => console.log(inputStore.detectorTable))
+type DetectorItem = {
+  name: string
+  selected: boolean;
+  key: string;
+  additionalKey?: {
+    name: string,
+    value: string
+  } | undefined;
+}
+
+const handleUpdate = (name: string, updatedItem: DetectorItem) => {
+  input.value.detectors[name] = updatedItem
+}
+
 </script>
 <style></style>

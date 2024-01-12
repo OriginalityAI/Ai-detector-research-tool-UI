@@ -10,6 +10,6 @@ export type Detector = {
     additionalKey?: {
       name: string,
       value: string
-    };
+    } | undefined;
   }
 }
