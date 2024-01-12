@@ -25,3 +25,14 @@ export type DetectorItem = {
     value: string
   } | undefined;
 }
+
+export type Folder = {
+  name: string
+  csv: string | null
+  txt: string | null
+  pngUrl: string | null
+}
+
+export type zFolders = {
+  [folderName: string]: Folder
+}

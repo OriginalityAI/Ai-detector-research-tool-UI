@@ -31,13 +31,14 @@
         </div>
       </v-row>
       <InputSheet />
-      
+      <ResultsContainer />
     </v-container>
   </main>
 </template>
 
 <script setup lang="ts">
 import InputSheet from './components/InputSheet.vue';
+import ResultsContainer from './components/ResultsContainer.vue';
 
 </script>
 
