@@ -10,7 +10,8 @@
         </v-col>
       </v-row>
       <v-row no-gutters class="px-12 pb-6">
-          <v-file-input class="flex align-start" prepend-icon="" append-inner-icon="mdi-paperclip" hide-details="auto" rounded="lg" variant="solo" bg-color="#d4d4d4"></v-file-input>
+        <v-file-input class="flex align-start" prepend-icon="" append-inner-icon="mdi-paperclip" hide-details="auto"
+          rounded="lg" variant="solo" bg-color="#d4d4d4"></v-file-input>
       </v-row>
       <v-row no-gutters justify="space-evenly" class="px-4 pb-6">
         <v-col cols="auto">
@@ -32,10 +33,21 @@
           <v-divider thickness="2" class="ml-4 mr-2"></v-divider>
         </v-col>
       </v-row>
+      <DetectorInfo v-for="item in inputStore.detectorTable" :key="item.name" :item="item" />
     </v-sheet>
   </v-container>
 </template>
 <script setup lang="ts">
+import { useInputStore } from '@/stores/inputStore'
+import { storeToRefs } from 'pinia';
+import { onMounted } from 'vue';
+import DetectorInfo from './DetectorInfo.vue';
+
+const inputStore = useInputStore();
+
+const { input } = storeToRefs(inputStore);
+const { detectors } = input.value;
+
+onMounted(() => console.log(inputStore.detectorTable))
 </script>
-<style>
-</style>
+<style></style>
