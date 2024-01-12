@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-0">
     <v-sheet color="#fafafa" class="sheet">
-      <v-form>
+      <v-form @submit.prevent="handleSubmit(input)">
         <v-row no-gutters align="center" class="pt-6 px-6 pb-6">
           <v-col cols="auto">
             <span class="text-h4 text-grey font-weight-bold">Data</span>
@@ -11,8 +11,9 @@
           </v-col>
         </v-row>
         <v-row no-gutters class="px-12 pb-6">
-          <v-file-input class="flex align-start" prepend-icon="" append-inner-icon="mdi-paperclip" hide-details="auto"
-            rounded="lg" variant="solo" bg-color="#d4d4d4" accept=".csv"></v-file-input>
+          <v-file-input v-model="input.csv" class="flex align-start" prepend-icon=""
+            append-inner-icon="mdi-paperclip" hide-details="auto" rounded="lg" variant="solo" bg-color="#d4d4d4"
+            accept=".csv"></v-file-input>
         </v-row>
         <v-row no-gutters justify="space-evenly" class="px-4 pb-6">
           <v-col cols="auto">
@@ -58,7 +59,8 @@
 import { useInputStore } from '@/stores/inputStore'
 import { storeToRefs } from 'pinia';
 import DetectorInfo from './DetectorInfo.vue';
-import type { DetectorItem } from '@/assets/types';
+import type { DetectorItem, UserInput } from '@/assets/types';
+import { formatDetectorPayload } from '@/utils/formatDetectorPayload';
 
 const inputStore = useInputStore();
 
@@ -67,6 +69,27 @@ const { detectors } = input.value;
 
 const handleUpdate = (name: string, updatedItem: DetectorItem) => {
   input.value.detectors[name] = updatedItem
+}
+
+const handleSubmit = async (input: UserInput): Promise<void> => {
+  if (input.csv) {
+    const detectorPayload = formatDetectorPayload(input);
+    const formdata = new FormData();
+    formdata.append("csvFile", input.csv[0], input.csv[0].name);
+    formdata.append("api_keys", JSON.stringify(detectorPayload));
+    const requestOptions: RequestInit = {
+      method: 'POST',
+      body: formdata,
+      redirect: 'follow'
+    };
+    try {
+      const response = await fetch("http://127.0.0.1:8000/analyze/", requestOptions)
+      const result = await response.text()
+      console.log(result)
+    } catch (err) {
+      console.error('Error during fetch', err);
+    }
+  }
 }
 
 </script>

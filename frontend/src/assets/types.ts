@@ -1,8 +1,5 @@
 export type UserInput = {
-  csv: {
-    name: string
-    file: File | null
-  }
+  csv: File[] | undefined
   detectors: Detectors
 }
 

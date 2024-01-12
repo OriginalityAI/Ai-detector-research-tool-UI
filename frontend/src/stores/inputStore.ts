@@ -5,10 +5,7 @@ import type { UserInput } from '@/assets/types'
 
 export const useInputStore = defineStore('inputStore', () => {
   const input: Ref<UserInput> = ref({
-    csv: {
-      name: '',
-      file: null,
-    },
+    csv: undefined,
     detectors: {
       Originality: {
         selected: true,
