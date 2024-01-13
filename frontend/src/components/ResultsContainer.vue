@@ -1,7 +1,7 @@
 <template>
   <v-container class="px-0 pb-12">
     <v-sheet color="#f5f5f5" class="sheet">
-      <v-row no-gutters>
+      <!-- <v-row no-gutters>
         <v-col v-for="folder in folders" :key="folder.name">
           <v-card>
             <v-card-title>{{ folder.name }}</v-card-title>
@@ -14,19 +14,22 @@
             <v-img :src="(folder.pngUrl as string)"></v-img>
           </v-card>
         </v-col>
-      </v-row>
+      </v-row>  -->
       <v-row no-gutters>
         <v-btn @click="loadZip">Unzip</v-btn>
+      </v-row>
+      <v-row v-for="folder in folders" :key="folder.name" no-gutters class="pb-12">
+        <DetectorResult :result="folder"/>
       </v-row>
     </v-sheet>
   </v-container>
 </template>
 <script setup lang="ts">
-import JSZip from 'jszip';
+import DetectorResult from './DetectorResult.vue';
 import type { Ref } from 'vue';
-import type { Folder, zFolders} from '@/assets/types'
 import { ref } from 'vue';
-import fs from 'fs';
+import type { Folder, zFolders} from '@/assets/types'
+import JSZip from 'jszip';
 
 
 const folders: Ref<Folder[]> = ref([]);

@@ -36,3 +36,8 @@ export type Folder = {
 export type zFolders = {
   [folderName: string]: Folder
 }
+
+export type TrueRate = {
+  label: string
+  score: string
+}
