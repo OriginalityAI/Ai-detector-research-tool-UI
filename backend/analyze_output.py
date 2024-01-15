@@ -13,7 +13,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-import pdb
+import uuid
 
 
 class AnalyzeOutput:
@@ -296,8 +296,9 @@ def csv_analyzer_main(csv_file: str):
         api_with_filetype = API[0] + ".csv"
         output_analyzer.confusion_matrix(api_with_filetype)
         output_analyzer.generate_stats(api_with_filetype)
-        file_cleanup(API[0])
+        folder = file_cleanup(API[0])
         print(f"Analysis complete for {API[0]}")
+    return folder
 
 
 def file_cleanup(api_name: str):
@@ -313,7 +314,10 @@ def file_cleanup(api_name: str):
     None
 
     """
+    folder = f"output_{uuid.uuid4()}/"
     for filename in os.listdir():
+        
         if api_name in filename:
-            os.makedirs(f"output/{api_name}", exist_ok=True)
-            shutil.move(filename, os.path.join(f"output/{api_name}", filename))
+            os.makedirs(f"{folder}/{api_name}", exist_ok=True)
+            shutil.move(filename, os.path.join(f"{folder}/{api_name}", filename))
+    return folder
