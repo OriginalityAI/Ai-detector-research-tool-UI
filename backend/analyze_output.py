@@ -46,11 +46,9 @@ class AnalyzeOutput:
             df = df.reset_index(drop=True)
             return df
         except KeyError as e:
-            print(f"Key error check your column names match the expected input: {e}")
-            return None
+            raise Exception(f"Key error check your column names match the expected input: {e}")
         except Exception as e:
-            print(f"An error occurred when trying to read data: {e}")
-            return None
+            raise Exception(f"An unexpected error occurred: {e}")
 
     def _calculate_labels(self, df: pd.DataFrame):
         """
@@ -176,8 +174,7 @@ class AnalyzeOutput:
                 )
             return df_cm, df_labels
         except:
-            print("Error calculating labels")
-            return None, None
+            raise Exception("Error calculating labels for the confusion matrix")
 
     def _visualize_confusion_matrix(self, cm, api_name: str, y_true):
         """
@@ -210,8 +207,8 @@ class AnalyzeOutput:
             plt.savefig(f"{api_name}_confusion_matrix.png")
             return df_cm, df_labels
         except:
-            print(
-                f"Confusion matrix could not be visualized. Check the shape of the matrix. It should be 2x2 or 1x2. Shape: {cm.shape}"
+            raise Exception(
+                f"Error visualizing the confusion matrix. Check the shape of the matrix. It should be 2x2 or 1x2. Shape: {cm.shape}"
             )
 
     def generate_stats(self, csv_file: str):
@@ -254,8 +251,8 @@ class AnalyzeOutput:
             output_string = (
                 f"F1 score: {f1}\n"
                 f"Precision: {precision}\n"
-                f"Recall (True Positive Rate): {recall}\n"
-                f"Specificity (True Negative Rate): {tnr}\n"
+                f"Recall: {recall}\n"
+                f"Specificity: {tnr}\n"
                 f"False Positive Rate: {fp_rate}\n"
                 f"Accuracy: {accuracy}\n"
             )
@@ -263,10 +260,11 @@ class AnalyzeOutput:
             with open(f"{API}_true_rates.txt", "a") as f:
                 f.write(output_string)
         except:
-            print("Error calculating true rates")
+            raise Exception("Error calculating true rates")
 
 
-def csv_analyzer_main(csv_file: str):
+
+def csv_analyzer_main(csv_file: str, task_id: str):
     """
     Main function and entry point for the csv analyzer
 
@@ -292,16 +290,16 @@ def csv_analyzer_main(csv_file: str):
 
     output_analyzer = AnalyzeOutput(csv_file)
     unique_apis = output_analyzer._unique_apis()
+    folder = f"output_{task_id}/"
     for API in unique_apis:
         api_with_filetype = API[0] + ".csv"
         output_analyzer.confusion_matrix(api_with_filetype)
         output_analyzer.generate_stats(api_with_filetype)
-        folder = file_cleanup(API[0])
-        print(f"Analysis complete for {API[0]}")
+        folder = file_cleanup(API[0], folder)
     return folder
 
 
-def file_cleanup(api_name: str):
+def file_cleanup(api_name: str, folder: str):
     """
     Move the csv files into a folder called output, one for each API
 
@@ -314,10 +312,9 @@ def file_cleanup(api_name: str):
     None
 
     """
-    folder = f"output_{uuid.uuid4()}/"
+    api_folder = os.path.join(folder, api_name)
+    os.makedirs(api_folder, exist_ok=True)
     for filename in os.listdir():
-        
         if api_name in filename:
-            os.makedirs(f"{folder}/{api_name}", exist_ok=True)
-            shutil.move(filename, os.path.join(f"{folder}/{api_name}", filename))
+            shutil.move(filename, os.path.join(api_folder, filename))
     return folder
