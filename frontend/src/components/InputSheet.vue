@@ -70,7 +70,7 @@ const inputStore = useInputStore();
 const resultsStore = useResultsStore()
 
 const { input } = storeToRefs(inputStore);
-const { pending, results } = storeToRefs(resultsStore);
+const { pending, zipBlob } = storeToRefs(resultsStore);
 
 const handleUpdate = (name: string, updatedItem: DetectorItem) => {
   input.value.detectors[name] = updatedItem
@@ -91,6 +91,7 @@ const poll = async (taskId: string) => {
       console.log(PENDING_MSG.completed);
       pending.value.msg = PENDING_MSG.completed;
       const blob = await response.blob()
+      zipBlob.value = blob
       const unzipped = await loadZip(blob)
       if (unzipped) {
         nextTick(() => pending.value.status = false)

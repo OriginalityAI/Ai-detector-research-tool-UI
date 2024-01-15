@@ -36,12 +36,15 @@ export const useResultsStore = defineStore('resultsStore', () => {
     msg: null,
   })
 
+  const zipBlob: Ref<Blob | null> = ref(null)
+
   return {
+    feed,
     orderBy,
     pending,
     results,
+    zipBlob,
     toggleDirection,
     updateResults,
-    feed
   }
 })
