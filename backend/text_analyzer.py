@@ -6,6 +6,7 @@ import requests
 from typing import Any, Dict, List
 from api_endpoints import API_ENDPOINTS
 from dotenv import load_dotenv
+import concurrent.futures
 
 load_dotenv()
 
@@ -211,7 +212,6 @@ class TextAnalyzer:
                         writer = csv.writer(file)
                         writer.writerow(row)
 
-                    print(f"✅ CSV row {index} processed successfully using {api_name}")
 
             else:
                 for filename in os.listdir(input_path):
@@ -245,10 +245,8 @@ class TextAnalyzer:
                             writer = csv.writer(file)
                             writer.writerow(row)
 
-                        print(f"✅ File {filename} processed successfully using {api_name}")
         except KeyError as e:
-            print(f"❌ Error: missing {e} key, check the CSV format in the README.md file")
-            return exit()
+            raise KeyError(f"❌ Error: missing {e} key, check the CSV format in the README.md file")
 
     def _get_nested_value(self, dictionary, keys):
         """
@@ -344,7 +342,6 @@ class HandleInput:
             del api_info["post_parameters"]["API_KEY_POINTER"]
             # Add the modified API info to the api_settings dictionary
             api_settings[api_name] = api_info
-        print(api_settings)
         return api_settings
 
     def handle_csv(self, input_csv, output_csv=None):
@@ -429,11 +426,6 @@ def text_analyzer_main(selected_endpoints: list, input_csv: str = "") -> str:
     output_csv: the output CSV file path
     """
     
-    # TODO No longer need this as the input will be sent from the frontend
-    
-    # (
-    #     api_settings,
-    # ) = get_user_input.get_input()
     
     output_csv = "output.csv"
     writer_organization_id = os.getenv('WRITER_ORGANIZATION_ID')
@@ -441,14 +433,17 @@ def text_analyzer_main(selected_endpoints: list, input_csv: str = "") -> str:
     api_settings = HandleInput().api_constructor(selected_endpoints)
     
 
-    for api_name, api in api_settings.items():
-        text_analyzer = TextAnalyzer(output_csv, api, api_name, writer_organization_id, copyleaks_scan_id)
-        if input_csv != "":
-            text_analyzer.process_files(input_csv, "", True)
-        # if ai_directory != "":
-        #     print(f"🤖 Processing AI files using {api_name}...")
-        #     text_analyzer.process_files(ai_directory, "AI")
-        # if human_directory != "":
-        #     print(f"👨‍💻 Processing human files using {api_name}...")
-        #     text_analyzer.process_files(human_directory, "Human")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for api_name, api in api_settings.items():
+            text_analyzer = TextAnalyzer(output_csv, api, api_name, writer_organization_id, copyleaks_scan_id)
+            if input_csv != "":
+                future = (executor.submit(text_analyzer.process_files, input_csv, "", True))
+                futures.append(future)
+    for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+    
     return output_csv
