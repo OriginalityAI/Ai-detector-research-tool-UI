@@ -14,6 +14,7 @@ import {
   faUpload,
   faDownload,
   faCircleQuestion,
+  faArrowDown
 } from '@fortawesome/free-solid-svg-icons'
 import 'vuetify/styles'
 import './styles/global.css'
@@ -29,6 +30,7 @@ library.add(
   faUpload,
   faDownload,
   faCircleQuestion,
+  faArrowDown
 )
 
 createApp(App)

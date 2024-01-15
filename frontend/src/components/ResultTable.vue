@@ -2,11 +2,11 @@
   <v-container fluid>
     <v-table class="rates-table mx-12">
       <thead>
-        <th v-for="rate of trueRates" :key="rate.label" class="text-center text-h6 font-weight-black">{{ rate.label }}</th>
+        <th v-for="rate of ratesArr" :key="rate.label" class="text-center text-h6 font-weight-black">{{ rate.label }}</th>
       </thead>
       <tbody>
         <tr>
-          <td v-for="rate of trueRates" :key="rate.label" class="text-center text-h6 font-weight-black">
+          <td v-for="rate of ratesArr" :key="rate.label" class="text-center text-h6 font-weight-black">
             {{ rate.score }}
           </td>
           </tr>
@@ -15,12 +15,14 @@
   </v-container>
 </template>
 <script setup lang="ts">
-import type { TrueRate } from '@/assets/types'
+import type { TrueRates } from '@/assets/types'
 import {onMounted} from 'vue';
 
 const props = defineProps<{
-  trueRates: TrueRate[]
+  trueRates: TrueRates
 }>()
+
+const ratesArr = Object.entries(props.trueRates).map(([label, score]) => ({label, score}))
 
 onMounted(() => console.log(props.trueRates))
 </script>

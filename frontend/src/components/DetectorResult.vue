@@ -2,11 +2,11 @@
   <v-container class="result">
     <v-row no-gutters justify="center" class="pb-6">
       <v-col cols="auto">
-        <span class="text-h4 font-weight-bold">{{ result.name }}</span>
+        <span class="text-h4 font-weight-black">{{ formattedName }}</span>
       </v-col>
     </v-row>
     <v-row no-gutters class="pb-6">
-      <ResultTable :trueRates="trueRates" />
+      <ResultTable :trueRates="result.trueRates!" />
     </v-row>
     <v-row no-gutters justify="center" class="pb-16">
         <v-img class="matrix" :src="(result.pngUrl!)"></v-img>
@@ -21,16 +21,14 @@
   </v-container>
 </template>
 <script setup lang="ts">
-import type { Folder, TrueRate } from '@/assets/types';
+import type { Folder, } from '@/assets/types';
 import ResultTable from './ResultTable.vue';
-
-const formatTrueRates = (txt: string): TrueRate[] => txt.trim().split('\n').map(s => (([label, score]) => ({ label, score }))(s.split(':')));
 
 const props = defineProps<{
   result: Folder
 }>()
 
-const trueRates = formatTrueRates(props.result.txt!)
+const formattedName = `${props.result.name[0] + props.result.name.slice(1).toLowerCase()}`
 
 </script>
 <style>
