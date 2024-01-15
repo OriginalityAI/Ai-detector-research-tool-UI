@@ -34,10 +34,10 @@ API_ENDPOINTS = {
             }
         },
     },
-    "Sapling": {
+    "SAPLING": {
         "post_parameters": {
             "endpoint": "https://api.sapling.ai/api/v1/aidetect",
-            "body": {"text": "", "key": ""},
+            "body": {"text": "", "key": "", "sent_scores": False},
             "API_KEY_POINTER": {"location": "body", "value": '', "key_name": "key"},
             "text_key": "text",
         },
