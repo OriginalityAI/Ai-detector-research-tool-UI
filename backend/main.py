@@ -1,4 +1,5 @@
 
+import asyncio
 import shutil
 import time
 import uuid
@@ -17,12 +18,13 @@ app = FastAPI()
 task_status = {}
 
 @app.get("/results/{task_id}")
-async def get_results(task_id: str):
-    return {"task_id": task_id, "status": task_status.get(task_id, "Not found")}
-    if (task_id not in task_status) or (task_status[task_id] == "running"):
+async def get_results(task_id: str, background_tasks: BackgroundTasks):
+    if (task_id not in task_status) or (task_status[task_id] == "running" or task_status[task_id] == "failed"):
         return {"status": "running", "task_id": task_id}
 
     if os.path.exists(f"./output_{task_id}.zip"):
+        # uncommenting this deletes the zip file after it is downloaded
+        # background_tasks.add_task(cleanup, [f"./output_{task_id}.zip"])
         return FileResponse(f"./output_{task_id}.zip", media_type="application/octet-stream", filename=f"output_{task_id}.zip")
     elif os.path.exists(f"./failed/failed_{task_id}.txt"):
         with open("./failed/failed.txt", "r") as f:
@@ -59,25 +61,35 @@ async def long_running_task(api_keys_dict: dict, csvFile: UploadFile, task_id: s
         
         # now we have the api keys in the .env file remove the api keys from the selected_endpoints dict
         selected_endpoints = {key.split('_')[0]: value for key, value in selected_endpoints.items() if value}
-
+        time.sleep(2)
         try:
             # set the csv file
             csv_file_path = await set_csv(csvFile)
         except Exception as e:
+
+            create_failed_folder([csv_file_path], "failed setting csv", e)
+            task_status[task_id] = "failed"
             return {"error": f"An error occurred when setting the csv file: {e}"}
         time.sleep(2)
+
+
         try:
             # run the text analyzer
-            output_csv = text_analyzer_main(selected_endpoints=selected_endpoints, input_csv=csv_file_path)
+            output_csv = await asyncio.to_thread(text_analyzer_main, selected_endpoints=selected_endpoints, input_csv=csv_file_path)
 
         except Exception as e:
-            create_failed_folder([csv_file_path], "failed text analyzer")
+            create_failed_folder([csv_file_path], "failed text analyzer", e)
+            task_status[task_id] = "failed"
             return {"error": f"An error occurred when running the text analyzer: {e}"}
+        
+
         try:
             # run the csv analyzer
-            output_folder = csv_analyzer_main(output_csv)
+            output_folder = await asyncio.to_thread(csv_analyzer_main, output_csv, task_id)
         except Exception as e:
-            create_failed_folder([csv_file_path, output_csv])
+
+            create_failed_folder([csv_file_path, output_csv], "failed csv analyzer", e)
+            task_status[task_id] = "failed"
             return {"error": f"An error occurred when running the csv analyzer: {e}"}
         
 
@@ -85,13 +97,15 @@ async def long_running_task(api_keys_dict: dict, csvFile: UploadFile, task_id: s
             # zip the output folder
             zip_files(output_folder, task_id)
         except Exception as e:
-            create_failed_folder([output_folder,csv_file_path, output_csv])
+
+            create_failed_folder([output_folder,csv_file_path, output_csv], "failed zipping", e)
+            task_status[task_id] = "failed"
             return {"error": f"An error occurred when zipping the output folder: {e}"}
         
         # cleanup([output_folder, "./.env", csv_file_path, output_csv])
 
         task_status[task_id] = "complete"
-        print(task_status)
+        cleanup([output_folder, "./.env", csv_file_path, output_csv])
     except Exception as e:
         return {"error": f"An error occurred: {e}"}
         
@@ -117,10 +131,10 @@ async def set_csv(csvFile: UploadFile = Form(...)):
         csv_file.write(await csvFile.read())
     return csv_file_path
 
-def create_failed_folder(files: list, location: str):
+def create_failed_folder(files: list, location: str, e: Exception):
     os.makedirs("failed", exist_ok=True)
     with open(f"./failed/{location}.txt", "w") as f:
-        f.write(f"An error occurred with the following files: {files}, when running {location}")
+        f.write(f"An error occurred with the following files: {files}, when running {location}\nmessage: {e}")
     for file in files:
         shutil.move(file, "failed")
     
