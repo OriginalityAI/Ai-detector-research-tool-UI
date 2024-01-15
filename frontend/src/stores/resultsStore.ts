@@ -7,15 +7,19 @@ import { RATE_LABELS } from '@/assets/global'
 export const useResultsStore = defineStore('resultsStore', () => {
   const results: Ref<Folder[]> = ref([])
 
-  const addResult = (result: Folder) => {
-    results.value.push(result)
-  }
+  const updateResults = (newResults: Folder[]) => {
+    results.value = newResults;
+  } 
 
   const orderBy: Ref<OrderSelect> = ref({
     selected: 'F1 score',
     options: RATE_LABELS,
     descending: true
   })
+
+  const toggleDirection = () => {
+    orderBy.value.descending = !orderBy.value.descending
+  }
 
   const feed = computed(() =>
     results.value.sort((resultA: Folder, resultB: Folder) =>
@@ -29,6 +33,8 @@ export const useResultsStore = defineStore('resultsStore', () => {
   return {
     orderBy,
     results,
+    toggleDirection,
+    updateResults,
     feed
   }
 })

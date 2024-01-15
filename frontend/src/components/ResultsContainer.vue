@@ -27,7 +27,10 @@
               hide-details></v-select>
           </v-col>
           <v-col cols="auto" class="pa-0 ma-0">
-            <v-btn icon flat class="order-direction"><font-awesome-icon class="text-h6" icon="fa-solid fa-arrow-down"></font-awesome-icon></v-btn>
+            <v-btn icon flat :ripple="false" class="order-direction" @click="resultStore.toggleDirection">
+              <font-awesome-icon v-if="orderBy.descending" class="text-h6" icon="fa-solid fa-arrow-down"></font-awesome-icon>
+              <font-awesome-icon v-else class="text-h6" icon="fa-solid fa-arrow-up"></font-awesome-icon>
+            </v-btn>
           </v-col>
           </v-col>
         <v-col>
@@ -67,8 +70,8 @@ const resultStore = useResultsStore()
 const { results, orderBy } = storeToRefs(resultStore)
 
 const loadZip = async () => {
-  try {
-    const response = await fetch('/test_output.zip');
+try {
+  const response = await fetch('/test_output.zip');
     const blob = await response.blob();
     console.log(blob)
     const zip = await new JSZip().loadAsync(blob);
@@ -113,7 +116,7 @@ const loadZip = async () => {
 const handleUnzip = async () => {
   const unzipped = await loadZip()
   if (unzipped) {
-    results.value = unzipped
+    resultStore.updateResults(unzipped)
   }
 }
 
