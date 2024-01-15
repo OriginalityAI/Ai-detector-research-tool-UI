@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import type { Folder, OrderSelect } from '@/assets/types'
+import type { Folder, OrderSelect, Pending } from '@/assets/types'
 import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { RATE_LABELS } from '@/assets/global'
@@ -30,8 +30,15 @@ export const useResultsStore = defineStore('resultsStore', () => {
           Number(resultA.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]])
     )
   )
+
+  const pending: Ref<Pending> = ref({
+    status: false,
+    msg: null,
+  })
+
   return {
     orderBy,
+    pending,
     results,
     toggleDirection,
     updateResults,

@@ -57,18 +57,63 @@
 </template>
 <script setup lang="ts">
 import { useInputStore } from '@/stores/inputStore'
+import { useResultsStore } from '@/stores/resultsStore'
 import { storeToRefs } from 'pinia';
 import DetectorInfo from './DetectorInfo.vue';
 import type { DetectorItem, UserInput } from '@/assets/types';
 import { formatDetectorPayload } from '@/utils/formatDetectorPayload';
+import { loadZip } from '@/utils/loadZip'
+import { PENDING_MSG } from '@/assets/global'
+import { nextTick } from 'vue';
 
 const inputStore = useInputStore();
+const resultsStore = useResultsStore()
 
 const { input } = storeToRefs(inputStore);
-const { detectors } = input.value;
+const { pending, results } = storeToRefs(resultsStore);
 
 const handleUpdate = (name: string, updatedItem: DetectorItem) => {
   input.value.detectors[name] = updatedItem
+}
+
+const poll = async (taskId: string) => {
+  pending.value.status = true;
+
+  try {
+    const response = await fetch(`/results/${taskId}`);
+    const data = await response.json();
+    if (data.status === 'running') {
+      console.log(PENDING_MSG.running);
+      pending.value.msg = PENDING_MSG.running;
+      setTimeout(() => poll(taskId), 30000);
+
+    } else if (response.ok && response.status === 200 && data.status !== 'running') {
+      console.log(PENDING_MSG.completed);
+      pending.value.msg = PENDING_MSG.completed;
+      const blob = await response.blob()
+      const unzipped = await loadZip(blob)
+      if (unzipped) {
+        nextTick(() => pending.value.status = false)
+        resultsStore.updateResults(unzipped)
+      }
+
+    } else if (data.error) {
+      nextTick(() => pending.value.status = false) 
+      pending.value.msg = `${data.error}`;
+      console.error(`Error from server: ${data.error}`);
+
+    } else {
+      nextTick(() => pending.value.status = false) 
+      pending.value.msg = `${data.error}`;
+      console.error('Unrecognized response status, stopping polling.');
+    }
+
+  } catch (error) {
+    // If there's a network or server error, log the error and retry after 30 seconds
+    console.error('An error occurred while polling:', error);
+    console.log('Retrying in 30 seconds...');
+    setTimeout(() => poll(taskId), 30000);
+  }
 }
 
 const handleSubmit = async (input: UserInput): Promise<void> => {
@@ -84,8 +129,8 @@ const handleSubmit = async (input: UserInput): Promise<void> => {
     };
     try {
       const response = await fetch("http://127.0.0.1:8000/analyze/", requestOptions)
-      const result = await response.text()
-      console.log(result)
+      const data = await response.json()
+      poll(data.taskId)
     } catch (err) {
       console.error('Error during fetch', err);
     }

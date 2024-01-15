@@ -52,3 +52,8 @@ export type OrderSelect = {
   options: OrderOptions 
   descending: boolean 
 }
+
+export type Pending = {
+  status: boolean
+  msg: string | null
+}
