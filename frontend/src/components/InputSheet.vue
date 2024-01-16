@@ -11,9 +11,8 @@
           </v-col>
         </v-row>
         <v-row no-gutters class="px-12 pb-6">
-          <v-file-input v-model="input.csv" class="flex align-start" prepend-icon=""
-            append-inner-icon="mdi-paperclip" hide-details="auto" rounded="lg" variant="solo" bg-color="#d4d4d4"
-            accept=".csv"></v-file-input>
+          <v-file-input v-model="input.csv" class="flex align-start" prepend-icon="" append-inner-icon="mdi-paperclip"
+            hide-details="auto" rounded="lg" variant="solo" bg-color="#d4d4d4" accept=".csv"></v-file-input>
         </v-row>
         <v-row no-gutters justify="space-evenly" class="px-4 pb-6">
           <v-col cols="auto">
@@ -23,7 +22,8 @@
             </v-btn>
           </v-col>
           <v-col cols="auto">
-            <v-btn class="text-none font-weight-black text-h6" size="large" color="secondary" rounded="pill" @click="downloadTemplate">
+            <v-btn class="text-none font-weight-black text-h6" size="large" color="secondary" rounded="pill"
+              @click="downloadTemplate">
               <span class="pr-2">Download Template</span><font-awesome-icon
                 icon="fa-solid fa-download"></font-awesome-icon>
             </v-btn>
@@ -51,6 +51,13 @@
                 icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
           </v-col>
         </v-row>
+        <v-row no gutters justify="center" class="pb-12">
+          <v-col cols="auto">
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="probe(input)"><span
+                class="text-h6 font-weight-black pr-2">Probe</span><font-awesome-icon class="text-h6"
+                icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
+          </v-col>
+        </v-row>
       </v-form>
     </v-sheet>
   </v-container>
@@ -65,6 +72,7 @@ import { formatDetectorPayload } from '@/utils/formatDetectorPayload';
 import { loadZip } from '@/utils/loadZip'
 import { PENDING_MSG } from '@/assets/global'
 import { nextTick } from 'vue';
+import { toRaw } from 'vue';
 
 const inputStore = useInputStore();
 const resultsStore = useResultsStore()
@@ -77,45 +85,36 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
 }
 
 const poll = async (taskId: string) => {
-  pending.value.status = true;
-
   try {
     const response = await fetch(`api/results/${taskId}/`);
+    const clone = response.clone()
     const data = await response.json();
     if (data.status === 'running') {
       console.log(PENDING_MSG.running);
       pending.value.msg = PENDING_MSG.running;
       setTimeout(() => poll(taskId), 30000);
 
+    } else if (data.status === 'failed') {
+      console.log(PENDING_MSG.failed);
+      pending.value.msg = PENDING_MSG.failed;
+      nextTick(() => pending.value.status = false)
     } else if (response.ok && response.status === 200 && data.status !== 'running') {
       console.log(PENDING_MSG.completed);
       pending.value.msg = PENDING_MSG.completed;
-      const blob = await response.blob()
+      const blob = await clone.blob()
       zipBlob.value = blob
       const unzipped = await loadZip(blob)
       if (unzipped) {
         nextTick(() => pending.value.status = false)
         resultsStore.updateResults(unzipped)
       }
-    setTimeout(async () => {
-      console.log(PENDING_MSG.completed);
-      pending.value.msg = PENDING_MSG.completed;
-      const blob = await response.blob()
-      zipBlob.value = blob
-      const unzipped = await loadZip(blob)
-      if (unzipped) {
-        nextTick(() => pending.value.status = false)
-        resultsStore.updateResults(unzipped)
-      }
-    }, 5000)
-
     } else if (data.error) {
-      nextTick(() => pending.value.status = false) 
+      nextTick(() => pending.value.status = false)
       pending.value.msg = `${data.error}`;
       console.error(`Error from server: ${data.error}`);
 
     } else {
-      nextTick(() => pending.value.status = false) 
+      nextTick(() => pending.value.status = false)
       pending.value.msg = `${data.error}`;
       console.error('Unrecognized response status, stopping polling.');
     }
@@ -131,8 +130,9 @@ const poll = async (taskId: string) => {
 const handleSubmit = async (input: UserInput): Promise<void> => {
   if (input.csv) {
     const detectorPayload = formatDetectorPayload(input);
+    const rawFile = toRaw(input.csv[0])
     const formdata = new FormData();
-    formdata.append("csvFile", input.csv[0], input.csv[0].name);
+    formdata.append("csvFile", rawFile, input.csv[0].name);
     formdata.append("api_keys", JSON.stringify(detectorPayload));
     const requestOptions: RequestInit = {
       method: 'POST',
@@ -143,6 +143,7 @@ const handleSubmit = async (input: UserInput): Promise<void> => {
       const response = await fetch("/api/analyze/", requestOptions)
       const data = await response.json()
       console.log(data)
+      pending.value.status = true;
       poll(data.task_id)
     } catch (err) {
       console.error('Error during fetch', err);
@@ -159,8 +160,12 @@ const downloadTemplate = async () => {
   link.setAttribute("download", "detector_tool_template.csv");
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link); 
+  document.body.removeChild(link);
 };
+
+const probe = async (input: UserInput) => {
+  console.log(input)
+}
 
 </script>
 <style></style>

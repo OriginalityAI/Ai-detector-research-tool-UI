@@ -1,7 +1,7 @@
 <template>
   <v-container class="result">
     <v-row no-gutters justify="center" class="pb-6">
-      <v-col cols="auto">
+      <v-col cols="auto" class="">
         <span class="text-h4 font-weight-black">{{ formattedName }}</span>
       </v-col>
     </v-row>

@@ -62,4 +62,5 @@ const toggleDetector = () => {
 <style>
 .detector-btn {
   width: 200px;
-}</style>
+}
+</style>

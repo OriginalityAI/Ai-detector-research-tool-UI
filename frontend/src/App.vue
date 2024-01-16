@@ -1,6 +1,6 @@
 <template>
   <main>
-    <v-container justify-center class="w-50">
+    <v-container justify-center class="content-container">
       <v-row no-gutters justify="center" align="center" class="pt-4 pb-4">
           <img class="brand" src="/pt-logo-small.png" />
       </v-row>
@@ -92,5 +92,11 @@ main {
   --bright-orange: #ffbb59;
   --light-dimmed-text: #babcd1;
   --mid-purple: #5a4d8e;
+}
+
+@media only screen and (min-width: 1200px) {
+  .content-container {
+  width: 1248px;
+}
 }
 </style>
