@@ -3,7 +3,7 @@ import asyncio
 import shutil
 import time
 import uuid
-from text_analyzer import text_analyzer_main
+from text_analyzer import text_analyzer_main, task_status
 from analyze_output import csv_analyzer_main
 from fastapi import FastAPI, UploadFile, Form, BackgroundTasks
 from fastapi.responses import FileResponse
@@ -11,23 +11,39 @@ import zipfile
 import os
 import io
 import json
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 task_status = {}
 
 @app.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
-    if (task_id not in task_status) or (task_status[task_id] == "running" or task_status[task_id] == "failed"):
-        return {"status": "running", "task_id": task_id}
+    if task_status[task_id] == "failed" or (task_id not in task_status):
+        if os.path.exists(f"./log/error_log_{task_id}.txt"):
+            with open(f"./log/error_log_{task_id}.txt", "r") as f:
+                return {"task_id": task_id, "status": "failed", "error": f.read(), "message": f"for a full log go to ./log/error_log_{task_id}.txt"}
+        else:
+            return {"task_id": task_id, "status": "failed", "error": "No error log found", "message": "No error log found"}
+            
+    if (task_status[task_id] == "running"):
+        return {**task_status}
 
     if os.path.exists(f"./output_{task_id}.zip"):
         # uncommenting this deletes the zip file after it is downloaded
         # background_tasks.add_task(cleanup, [f"./output_{task_id}.zip"])
         return FileResponse(f"./output_{task_id}.zip", media_type="application/octet-stream", filename=f"output_{task_id}.zip")
-    elif os.path.exists(f"./failed/failed_{task_id}.txt"):
-        with open("./failed/failed.txt", "r") as f:
+    elif os.path.exists(f"./log/error_log_{task_id}.txt"):
+        with open("./log/error_log.txt", "r") as f:
             return {"error": f.read()}
     else:
         return {"error": "No results found"}
@@ -38,13 +54,13 @@ async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(.
         task_id = str(uuid.uuid4())
         api_keys_dict = json.loads(api_keys)
         task_status[task_id] = "running"
-        background_tasks.add_task(long_running_task, api_keys_dict, csvFile, task_id)
+        background_tasks.add_task(process_file, api_keys_dict, csvFile, task_id)
 
         return {"message": "Analysis started", "task_id": task_id} 
     except Exception as e:
         return {"error": f"An error occurred: {e}"}
     
-async def long_running_task(api_keys_dict: dict, csvFile: UploadFile, task_id: str):
+async def process_file(api_keys_dict: dict, csvFile: UploadFile, task_id: str):
     try:
         # set the api keys in the .env file
         selected_endpoints = {}
@@ -66,8 +82,7 @@ async def long_running_task(api_keys_dict: dict, csvFile: UploadFile, task_id: s
             # set the csv file
             csv_file_path = await set_csv(csvFile)
         except Exception as e:
-
-            create_failed_folder([csv_file_path], "failed setting csv", e)
+            create_failed_folder([], "setting csv", e, task_id, "Check the csv file is properly formatted and exists")
             task_status[task_id] = "failed"
             return {"error": f"An error occurred when setting the csv file: {e}"}
         time.sleep(2)
@@ -75,10 +90,10 @@ async def long_running_task(api_keys_dict: dict, csvFile: UploadFile, task_id: s
 
         try:
             # run the text analyzer
-            output_csv = await asyncio.to_thread(text_analyzer_main, selected_endpoints=selected_endpoints, input_csv=csv_file_path)
+            output_csv = await asyncio.to_thread(text_analyzer_main, task_id,selected_endpoints=selected_endpoints, input_csv=csv_file_path)
 
         except Exception as e:
-            create_failed_folder([csv_file_path], "failed text analyzer", e)
+            create_failed_folder([csv_file_path], "text analyzer", e, task_id)
             task_status[task_id] = "failed"
             return {"error": f"An error occurred when running the text analyzer: {e}"}
         
@@ -88,7 +103,7 @@ async def long_running_task(api_keys_dict: dict, csvFile: UploadFile, task_id: s
             output_folder = await asyncio.to_thread(csv_analyzer_main, output_csv, task_id)
         except Exception as e:
 
-            create_failed_folder([csv_file_path, output_csv], "failed csv analyzer", e)
+            create_failed_folder([csv_file_path, output_csv], "csv analyzer", e, task_id)
             task_status[task_id] = "failed"
             return {"error": f"An error occurred when running the csv analyzer: {e}"}
         
@@ -97,17 +112,18 @@ async def long_running_task(api_keys_dict: dict, csvFile: UploadFile, task_id: s
             # zip the output folder
             zip_files(output_folder, task_id)
         except Exception as e:
-
-            create_failed_folder([output_folder,csv_file_path, output_csv], "failed zipping", e)
+            create_failed_folder([output_folder,csv_file_path, output_csv], "zipping", e, task_id)
             task_status[task_id] = "failed"
             return {"error": f"An error occurred when zipping the output folder: {e}"}
         
-        # cleanup([output_folder, "./.env", csv_file_path, output_csv])
 
         task_status[task_id] = "complete"
         cleanup([output_folder, "./.env", csv_file_path, output_csv])
     except Exception as e:
+        create_failed_folder([csv_file_path, output_csv], "failed", e, task_id)
+        task_status[task_id] = "failed"
         return {"error": f"An error occurred: {e}"}
+    
         
 
     
@@ -127,24 +143,35 @@ def zip_files(folder: str, task_id: str):
 
 async def set_csv(csvFile: UploadFile = Form(...)):
     csv_file_path = "./csvFile.csv"
-    with open(csv_file_path, "wb") as csv_file:
-        csv_file.write(await csvFile.read())
-    return csv_file_path
+    try:
+        with open(csv_file_path, "wb") as csv_file:
+            csv_file.write(await csvFile.read())
+        return csv_file_path
+    except Exception as e:
+        raise Exception(f"An error occurred when setting the csv file: {e}")
 
-def create_failed_folder(files: list, location: str, e: Exception):
-    os.makedirs("failed", exist_ok=True)
-    with open(f"./failed/{location}.txt", "w") as f:
-        f.write(f"An error occurred with the following files: {files}, when running {location}\nmessage: {e}")
-    for file in files:
-        shutil.move(file, "failed")
+def create_failed_folder(files: list, location: str, e: Exception, task_id: str, custom_message: str = None):
+    try:
+        os.makedirs("log", exist_ok=True)
+        os.makedirs(f"./log/{task_id}", exist_ok=True)
+        with open(f"./log/{task_id}/error_log_{task_id}.txt", "w") as f:
+            f.write(f"An error occurred at the following location: {location}\nerror: {e}\nmessage: {custom_message}")
+        for file in files:
+            shutil.move(file, f"./log/{task_id}")
+        f.close()
+    except Exception as e:
+        raise Exception(f"An error occurred when creating the failed folder: {e}")
     
     
 def set_env(selected_endpoints: dict):
-    with open("./.env", "w") as env_file:
-            for key, value in selected_endpoints.items():
-                env_file.write(f"{key}='{value}'\n")
-    env_file.close()
-    return selected_endpoints
+    try:
+        with open("./.env", "w") as env_file:
+                for key, value in selected_endpoints.items():
+                    env_file.write(f"{key}='{value}'\n")
+        env_file.close()
+        return selected_endpoints
+    except Exception as e:
+        raise Exception(f"An error occurred when setting the api keys in the .env file: {e}")
 
 def cleanup(path:list):
     for file in path:
