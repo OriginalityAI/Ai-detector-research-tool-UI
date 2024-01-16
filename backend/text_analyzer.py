@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 from api_endpoints import API_ENDPOINTS
 from dotenv import load_dotenv
 import concurrent.futures
+task_status = {}
 
 load_dotenv()
 
@@ -38,12 +39,14 @@ class TextAnalyzer:
         output_csv: str,
         api_info: Dict[str, Dict[str, Any]],
         api_name: str,
-        writer_organization_id=None,
-        copyleaks_scan_id=None,
+        task_id: str,
+        writer_organization_id: str = None,
+        copyleaks_scan_id: str = None,
     ) -> None:
         self.output_csv = output_csv
         self.api_info = api_info
         self.api_name = api_name
+        self.task_id = task_id
         self.writer_organization_id = writer_organization_id
         self.copyleaks_scan_id = copyleaks_scan_id
 
@@ -211,6 +214,9 @@ class TextAnalyzer:
                     with open(output_csv, "a", newline="", encoding="UTF-8") as file:
                         writer = csv.writer(file)
                         writer.writerow(row)
+                    task_status[self.task_id] = {"status": "running", "progress": index/len(df)*100}
+                return output_csv
+                    
 
 
             else:
@@ -413,7 +419,7 @@ class HandleInput:
         ]
 
 
-def text_analyzer_main(selected_endpoints: list, input_csv: str = "") -> str:
+def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = "") -> str:
     """
     main function that runs the text analyzer
 
@@ -436,7 +442,7 @@ def text_analyzer_main(selected_endpoints: list, input_csv: str = "") -> str:
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
         for api_name, api in api_settings.items():
-            text_analyzer = TextAnalyzer(output_csv, api, api_name, writer_organization_id, copyleaks_scan_id)
+            text_analyzer = TextAnalyzer(output_csv, api, api_name, task_id, writer_organization_id, copyleaks_scan_id)
             if input_csv != "":
                 future = (executor.submit(text_analyzer.process_files, input_csv, "", True))
                 futures.append(future)
