@@ -4,12 +4,12 @@
       <v-row no-gutters justify="center" align="center" class="pt-4 pb-4">
           <img class="brand" src="/pt-logo-small.png" />
       </v-row>
-      <v-row no-gutters justify="center" class="pb-12">
+      <v-row no-gutters justify="center" class="pb-16">
           <span class="text-h3 text-center font-weight-black">
             AI Detector<br>Efficacy Research Tool
           </span>
       </v-row>
-      <v-row no-gutters class="pb-12">
+      <v-row no-gutters class="pb-16 px-16">
         <div class="glass sheet">
           <p class="text-h4 font-weight-bold pt-6 pl-6 pr-6 pb-4">What is this tool?</p>
           <p class="text-h6 font-weight-medium pb-6 pl-6 pr-6">

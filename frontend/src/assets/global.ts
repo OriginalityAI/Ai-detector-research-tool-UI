@@ -8,7 +8,7 @@ export const RATE_LABELS = [
 ] as const;
 
 export const PENDING_MSG = {
-  running: 'Task is running, polling again in 30 seconds...',
+  running: 'Your detectors are being evaluated, this may take a few minutes',
   completed: 'Task completed, handling file download...',
   oddResponse: 'Unrecognized response status, stopped polling'
 }

@@ -1,5 +1,5 @@
 <template>
-  <v-container class="pt-0 px-0 pb-12">
+  <v-container class="pt-0 px-0 pb-16">
     <v-sheet color="#fafafa" class="sheet">
       <v-form @submit.prevent="handleSubmit(input)">
         <v-row no-gutters align="center" class="pt-6 px-6 pb-6">
@@ -23,7 +23,7 @@
             </v-btn>
           </v-col>
           <v-col cols="auto">
-            <v-btn class="text-none font-weight-black text-h6" size="large" color="secondary" rounded="pill">
+            <v-btn class="text-none font-weight-black text-h6" size="large" color="secondary" rounded="pill" @click="downloadTemplate">
               <span class="pr-2">Download Template</span><font-awesome-icon
                 icon="fa-solid fa-download"></font-awesome-icon>
             </v-btn>
@@ -46,7 +46,7 @@
         </v-row>
         <v-row no gutters justify="center" class="pb-12">
           <v-col cols="auto">
-            <v-btn color="primary" size="x-large" rounded="lg" class="text-none"><span
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit(input)"><span
                 class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
                 icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
           </v-col>
@@ -80,7 +80,7 @@ const poll = async (taskId: string) => {
   pending.value.status = true;
 
   try {
-    const response = await fetch(`/results/${taskId}`);
+    const response = await fetch(`api/results/${taskId}/`);
     const data = await response.json();
     if (data.status === 'running') {
       console.log(PENDING_MSG.running);
@@ -97,6 +97,17 @@ const poll = async (taskId: string) => {
         nextTick(() => pending.value.status = false)
         resultsStore.updateResults(unzipped)
       }
+    setTimeout(async () => {
+      console.log(PENDING_MSG.completed);
+      pending.value.msg = PENDING_MSG.completed;
+      const blob = await response.blob()
+      zipBlob.value = blob
+      const unzipped = await loadZip(blob)
+      if (unzipped) {
+        nextTick(() => pending.value.status = false)
+        resultsStore.updateResults(unzipped)
+      }
+    }, 5000)
 
     } else if (data.error) {
       nextTick(() => pending.value.status = false) 
@@ -129,14 +140,27 @@ const handleSubmit = async (input: UserInput): Promise<void> => {
       redirect: 'follow'
     };
     try {
-      const response = await fetch("http://127.0.0.1:8000/analyze/", requestOptions)
+      const response = await fetch("/api/analyze/", requestOptions)
       const data = await response.json()
-      poll(data.taskId)
+      console.log(data)
+      poll(data.task_id)
     } catch (err) {
       console.error('Error during fetch', err);
     }
   }
 }
+
+const downloadTemplate = async () => {
+  const headers = ["text", "dataset", "label"]
+  let csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "detector_tool_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link); 
+};
 
 </script>
 <style></style>

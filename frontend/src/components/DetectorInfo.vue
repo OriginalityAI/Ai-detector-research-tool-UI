@@ -1,24 +1,24 @@
 <template>
   <v-row v-if="item.additionalKey" no-gutters align="center" class="px-16 pb-4">
-    <v-col cols="auto">
+    <v-col cols="12" md="auto">
       <v-btn :color="btnColor" size="x-large" rounded="pill" class="detector-btn text-none text-h6 font-weight-black mr-6"
         @click="toggleDetector">{{ item.name }}</v-btn>
     </v-col>
-    <v-col cols="7" class="flex-grow-1 pr-6">
+    <v-col cols="12" md="7" class="flex-grow-1 pr-6">
       <v-text-field :disabled="!item.selected" disab v-model="localItem.key" @input="emitUpdate" rounded="lg" variant="outlined"
         prepend-inner-icon="mdi-key" clearable type="password" hide-details="auto" label="Key"></v-text-field>
     </v-col>
-    <v-col cols="auto" class="flex-grow-1">
+    <v-col cols="12" md="auto" class="flex-grow-1">
       <v-text-field :disabled="!item.selected" v-model="localItem.additionalKey!.value" @input="emitUpdate" rounded="lg" variant="outlined"
         prepend-inner-icon="mdi-key" label="ID" clearable type="password" hide-details="auto"></v-text-field>
     </v-col>
   </v-row>
   <v-row v-else no-gutters align="center" class="px-16 pb-4">
-    <v-col cols="auto">
+    <v-col cols="12" md="auto">
       <v-btn :color="btnColor" size="x-large" rounded="pill" class="detector-btn text-none text-h6 font-weight-black mr-6"
         @click="toggleDetector">{{ item.name }}</v-btn>
     </v-col>
-    <v-col cols="auto" colspan="2" class="flex-grow-1">
+    <v-col cols="12" md="auto" class="flex-grow-1">
       <v-text-field :disabled="!item.selected" v-model="localItem.key" @input="emitUpdate" rounded="lg" variant="outlined"
         prepend-inner-icon="mdi-key" label="Key" clearable type="password" hide-details="auto"></v-text-field>
     </v-col>

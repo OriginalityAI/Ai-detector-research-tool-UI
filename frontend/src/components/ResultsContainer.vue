@@ -5,7 +5,7 @@
         <v-btn class="text-black" size="x-large" @click="handleUnzip">Unzip</v-btn>
       </v-col>
     </v-row> -->
-    <v-sheet color="#f5f5f5" class="sheet">
+    <v-sheet color="#f5f5f5" class="results-sheet sheet d-flex-col">
       <v-row no-gutters align="center" justify="space-between" class="px-8 py-6">
         <v-col cols="auto" class="d-flex align-center">
           <v-col cols="auto" class="pa-0 ma-0">
@@ -30,12 +30,28 @@
           <v-divider thickness="2" class="mx-4"></v-divider>
         </v-col>
         <v-col cols="auto">
-          <v-btn class="text-none font-weight-black text-body-1" color="secondary" rounded="pill" @click="handleDownloadAll">
+          <v-btn class="text-none font-weight-black text-body-1" color="secondary" rounded="pill"
+            @click="handleDownloadAll">
             <span class="pr-2">Download All</span><font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
           </v-btn>
         </v-col>
       </v-row>
-      <v-row v-for="folder in resultStore.feed" :key="folder.name" no-gutters class="pb-12">
+      <v-row no-gutters v-if="!pending.status && !results.length" justify="center" class="brain">
+        <v-col cols="auto">
+          <OriginalitySVG />
+        </v-col>
+      </v-row>
+      <v-row v-if="pending.status" no-gutters justify="center" class="brain">
+        <v-col cols="auto">
+          <v-progress-circular indeterminate color="secondary" :width="14" :size="265"></v-progress-circular>
+        </v-col>
+      </v-row>
+      <v-row v-if="pending.status" no-gutters justify="center" class="pt-8">
+        <v-col cols="auto">
+          <span class="text-h6 font-weight-black">{{ pending.msg }}</span>
+        </v-col>
+      </v-row>
+      <v-row v-else v-for="folder in resultStore.feed" :key="folder.name" no-gutters class="pb-12">
         <DetectorResult :result="folder" />
       </v-row>
     </v-sheet>
@@ -44,21 +60,22 @@
 
 <script setup lang="ts">
 import DetectorResult from './DetectorResult.vue';
+import OriginalitySVG from './OriginalitySVG.vue';
 import { useResultsStore } from '@/stores/resultsStore'
 import { storeToRefs } from 'pinia';
 // import { loadZip } from '@/utils/loadZip'
 
 const resultStore = useResultsStore()
-const { orderBy, zipBlob } = storeToRefs(resultStore)
+const { orderBy, zipBlob, pending, results } = storeToRefs(resultStore)
 
 const handleDownloadAll = () => {
   if (zipBlob.value) {
-    const url = window.URL.createObjectURL(zipBlob.value); 
+    const url = window.URL.createObjectURL(zipBlob.value);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'output.zip';
-    document.body.appendChild(a); 
-    a.click(); 
+    document.body.appendChild(a);
+    a.click();
     window.URL.revokeObjectURL(url);
     a.remove();
   } else {
@@ -79,6 +96,12 @@ const handleDownloadAll = () => {
   margin: 0px;
   padding: 0px;
   background-color: inherit;
+}
 
+.results-sheet {
+  min-height: 600px;
+}
+.brain {
+  padding-top: 70px;
 }
 </style>
