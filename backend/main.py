@@ -29,11 +29,10 @@ task_status = {}
 @app.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
     if task_status[task_id] == "failed" or (task_id not in task_status):
-        if os.path.exists(f"./log/error_log_{task_id}.txt"):
-            with open(f"./log/error_log_{task_id}.txt", "r") as f:
-                return {"task_id": task_id, "status": "failed", "error": f.read(), "message": f"for a full log go to ./log/error_log_{task_id}.txt"}
+        if os.path.exists(f"./log/{task_id}/error_log_{task_id}.txt"):
+            return FileResponse(f"./log/{task_id}", media_type="application/octet-stream", filename=f"error_log_{task_id}.txt")
         else:
-            return {"task_id": task_id, "status": "failed", "error": "No error log found", "message": "No error log found"}
+            return {"task_id": task_status[task_id], "error": "No error log found", "message": "No error log found"}
             
     if (task_status[task_id] == "running"):
         return {**task_status}
@@ -50,17 +49,23 @@ async def get_results(task_id: str, background_tasks: BackgroundTasks):
 
 @app.post("/analyze/")
 async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(...), csvFile: UploadFile = Form(...)):
+    try: 
+        csv_file_path = await set_csv(csvFile)
+    except Exception as e:
+        create_failed_folder([], "setting csv", e, task_id, "Check the csv file is properly formatted and exists")
+        task_status[task_id] = "failed"
+        return {"error": f"An error occurred when setting the csv file: {e}"}
     try:
         task_id = str(uuid.uuid4())
         api_keys_dict = json.loads(api_keys)
         task_status[task_id] = "running"
-        background_tasks.add_task(process_file, api_keys_dict, csvFile, task_id)
+        background_tasks.add_task(process_file, api_keys_dict, csv_file_path, task_id)
 
         return {"message": "Analysis started", "task_id": task_id} 
     except Exception as e:
         return {"error": f"An error occurred: {e}"}
     
-async def process_file(api_keys_dict: dict, csvFile: UploadFile, task_id: str):
+async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
     try:
         # set the api keys in the .env file
         selected_endpoints = {}
@@ -77,21 +82,11 @@ async def process_file(api_keys_dict: dict, csvFile: UploadFile, task_id: str):
         
         # now we have the api keys in the .env file remove the api keys from the selected_endpoints dict
         selected_endpoints = {key.split('_')[0]: value for key, value in selected_endpoints.items() if value}
-        time.sleep(2)
-        try:
-            # set the csv file
-            csv_file_path = await set_csv(csvFile)
-        except Exception as e:
-            create_failed_folder([], "setting csv", e, task_id, "Check the csv file is properly formatted and exists")
-            task_status[task_id] = "failed"
-            return {"error": f"An error occurred when setting the csv file: {e}"}
-        time.sleep(2)
 
 
         try:
             # run the text analyzer
             output_csv = await asyncio.to_thread(text_analyzer_main, task_id,selected_endpoints=selected_endpoints, input_csv=csv_file_path)
-
         except Exception as e:
             create_failed_folder([csv_file_path], "text analyzer", e, task_id)
             task_status[task_id] = "failed"
@@ -100,7 +95,7 @@ async def process_file(api_keys_dict: dict, csvFile: UploadFile, task_id: str):
 
         try:
             # run the csv analyzer
-            output_folder = await asyncio.to_thread(csv_analyzer_main, output_csv, task_id)
+            output_folder = csv_analyzer_main(output_csv, task_id)
         except Exception as e:
 
             create_failed_folder([csv_file_path, output_csv], "csv analyzer", e, task_id)
@@ -168,7 +163,6 @@ def set_env(selected_endpoints: dict):
         with open("./.env", "w") as env_file:
                 for key, value in selected_endpoints.items():
                     env_file.write(f"{key}='{value}'\n")
-        env_file.close()
         return selected_endpoints
     except Exception as e:
         raise Exception(f"An error occurred when setting the api keys in the .env file: {e}")
