@@ -1,6 +1,7 @@
 import csv
 import math
 import os
+import traceback
 import pandas as pd
 import requests
 from typing import Any, Dict, List
@@ -180,10 +181,6 @@ class TextAnalyzer:
                     body[text_key] = text
                     parameters = body.copy()
 
-                    try:
-                        del parameters["API_KEY_POINTER"]
-                    except KeyError:
-                        pass
 
                     for key, value in parameters.items():
                         if isinstance(value, float):
@@ -228,10 +225,6 @@ class TextAnalyzer:
                         body[text_key] = text
                         parameters = body.copy()
 
-                        try:
-                            del parameters["API_KEY_POINTER"]
-                        except KeyError:
-                            pass
 
                         response = requests.post(endpoint, headers=headers, json=parameters, timeout=60)
 
@@ -345,7 +338,6 @@ class HandleInput:
                 api_info["post_parameters"]["body"][api_info["post_parameters"]["API_KEY_POINTER"]["key_name"]] = (
                     api_info["post_parameters"]["API_KEY_POINTER"]["value"] + api_key
                 )
-            del api_info["post_parameters"]["API_KEY_POINTER"]
             # Add the modified API info to the api_settings dictionary
             api_settings[api_name] = api_info
         return api_settings
@@ -380,43 +372,7 @@ class HandleInput:
                 set_headers(output_csv, "txt")
         return output_csv, input_csv
 
-    def get_input(self):
-        """
-        Get the user input for the API endpoints, API keys, and directories
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        api_settings: the API settings dictionary
-        ai_directory: the directory path for AI text files
-        human_directory: the directory path for human text files
-        output_csv: the output CSV file path
-        writer_organization_id: the writer organization ID for the Writer.com API
-        copyleaks_scan_id: the Copyleaks scan ID for the Copyleaks API
-        """
-
-        selected_endpoints, writer_organization_id, copyleaks_scan_id = self.get_API_input()
-
-        api_settings = self.api_constructor(selected_endpoints)
-
-        # Get the file paths
-        ai_directory, human_directory, input_csv, output_csv = self.get_file_paths()
-
-        # handle the input CSV file
-        output_csv, input_csv = self.handle_csv(input_csv, output_csv)
-
-        return [
-            api_settings,
-            ai_directory,
-            human_directory,
-            output_csv,
-            writer_organization_id,
-            copyleaks_scan_id,
-            input_csv,
-        ]
+   
 
 
 def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = "") -> str:
@@ -434,7 +390,6 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
     
     
     output_csv = "output.csv"
-    writer_organization_id = os.getenv('WRITER_ORGANIZATION_ID')
     copyleaks_scan_id = os.getenv('COPYLEAKS_SCAN_ID')
     api_settings = HandleInput().api_constructor(selected_endpoints)
     
@@ -442,7 +397,7 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
         for api_name, api in api_settings.items():
-            text_analyzer = TextAnalyzer(output_csv, api, api_name, task_id, writer_organization_id, copyleaks_scan_id)
+            text_analyzer = TextAnalyzer(output_csv, api, api_name, task_id, copyleaks_scan_id)
             if input_csv != "":
                 future = (executor.submit(text_analyzer.process_files, input_csv, "", True))
                 futures.append(future)
@@ -450,6 +405,6 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
             try:
                 future.result()
             except Exception as e:
-                print(f"An error occurred: {e}")
+                raise Exception(f"An error occurred: {e}")
     
     return output_csv
