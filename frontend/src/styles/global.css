@@ -6,6 +6,10 @@
   font-weight: bold;
 }
 
+.v-messages__message {
+  font-weight: bold;
+}
+
 .white-space {
   white-space: pre;
 }
