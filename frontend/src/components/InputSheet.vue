@@ -1,7 +1,7 @@
 <template>
   <v-container class="pt-0 px-0 pb-16">
     <v-sheet color="#fafafa" class="sheet">
-      <v-form @submit.prevent="handleSubmit(input)">
+      <v-form ref="form" validate-on="submit lazy" @submit.prevent="handleSubmit(input)">
         <v-row no-gutters align="center" class="pt-6 px-6 pb-6">
           <v-col cols="auto">
             <span class="text-h4 text-grey font-weight-bold">Data</span>
@@ -11,8 +11,9 @@
           </v-col>
         </v-row>
         <v-row no-gutters class="px-12 pb-6">
-          <v-file-input v-model="input.csv" class="flex align-start" prepend-icon="" append-inner-icon="mdi-paperclip"
-            hide-details="auto" rounded="lg" variant="solo" bg-color="#d4d4d4" accept=".csv"></v-file-input>
+          <v-file-input v-model="input.csv" :rules="fileInputRules" class="flex align-start" prepend-icon=""
+            append-inner-icon="mdi-paperclip" hide-details="auto" rounded="lg" variant="solo" bg-color="#d4d4d4"
+            accept=".csv"></v-file-input>
         </v-row>
         <v-row no-gutters justify="space-evenly" class="px-4 pb-6">
           <v-col cols="auto">
@@ -46,8 +47,8 @@
         </v-row>
         <v-row no gutters justify="center" class="pb-12">
           <v-col cols="auto">
-            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit(input)"><span
-                class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit(input)"
+              type="submit"><span class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
                 icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
           </v-col>
         </v-row>
@@ -73,12 +74,27 @@ import { loadZip } from '@/utils/loadZip'
 import { PENDING_MSG } from '@/assets/global'
 import { nextTick } from 'vue';
 import { toRaw } from 'vue';
+import { ref } from 'vue';
+import type { Ref } from 'vue';
 
 const inputStore = useInputStore();
 const resultsStore = useResultsStore()
 
 const { input } = storeToRefs(inputStore);
 const { pending, zipBlob } = storeToRefs(resultsStore);
+
+const form: Ref<any> = ref(null);
+
+type ValidationRule = (v: File[]) => string | boolean
+
+const fileInputRules: ValidationRule[] = [
+  (v: File[]) => {
+    if (!v || !v.length) {
+      return 'Please upload a CSV file to be tested.'
+    }
+    return true
+  }
+]
 
 const handleUpdate = (name: string, updatedItem: DetectorItem) => {
   input.value.detectors[name] = updatedItem
@@ -97,7 +113,7 @@ const poll = async (taskId: string) => {
       console.log(PENDING_MSG.running);
       pending.value.msg = PENDING_MSG.running;
       setTimeout(() => poll(taskId), 30000);
-    // success state
+      // success state
     } else if (data.blob) {
       console.log(PENDING_MSG.completed);
       pending.value.msg = PENDING_MSG.completed;
@@ -107,12 +123,12 @@ const poll = async (taskId: string) => {
         nextTick(() => pending.value.status = false)
         resultsStore.updateResults(unzipped)
       }
-    // fail state
+      // fail state
     } else if (data.status === 'failed') {
       console.log(PENDING_MSG.failed);
       pending.value.msg = PENDING_MSG.failed;
       nextTick(() => pending.value.status = false)
-    // error state
+      // error state
     } else if (data.error) {
       nextTick(() => pending.value.status = false)
       pending.value.msg = `${data.error}`;
@@ -132,11 +148,12 @@ const poll = async (taskId: string) => {
 }
 
 const handleSubmit = async (input: UserInput): Promise<void> => {
-  if (input.csv) {
+  const valid = await form.value!.validate()
+  if (valid.valid) {
     const detectorPayload = formatDetectorPayload(input);
-    const rawFile = toRaw(input.csv[0])
+    const rawFile = toRaw(input.csv![0])
     const formdata = new FormData();
-    formdata.append("csvFile", rawFile, input.csv[0].name);
+    formdata.append("csvFile", rawFile, input.csv![0].name);
     formdata.append("api_keys", JSON.stringify(detectorPayload));
     const requestOptions: RequestInit = {
       method: 'POST',
