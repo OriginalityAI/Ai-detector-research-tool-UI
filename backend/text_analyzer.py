@@ -8,7 +8,10 @@ from typing import Any, Dict, List
 from api_endpoints import API_ENDPOINTS
 from dotenv import load_dotenv
 import concurrent.futures
-task_status = {}
+from task_status import shared_data
+task_status = shared_data.task_status
+
+api_progress = {}
 
 load_dotenv()
 
@@ -105,8 +108,7 @@ class TextAnalyzer:
                         row.append(data.get(key))
             return row
         except Exception as e:
-            print(f"An error occurred: {e} check the API response format in api_endpoints.py")
-            return exit()
+            raise Exception(f"An error occurred: {e} check the API response format in api_endpoints.py")
 
     def _extract_values(
         self,
@@ -132,7 +134,7 @@ class TextAnalyzer:
                 ]
             )
 
-    def process_files(self, input_path, text_type, is_csv=False):
+    def process_files(self, input_path, text_type, is_csv=False, selected_endpoints=None):
         """
         Main function that processes the files in the directory using the API and writes the results to the CSV file
 
@@ -193,12 +195,12 @@ class TextAnalyzer:
                     try:
                         response = requests.post(endpoint, headers=headers, json=parameters, timeout=60)
                     except ValueError as e:
-                        print(f"A ValueError occurred: {e}")
+                        print(f"ValueError in API request: {e}. This could be due to invalid data types in the request body. Check the format of the data being sent.")
                         self._write_error(text_type, row, index, e, output_csv, api_name)
                         continue
 
                     if response.status_code != 200:
-                        print(f"❌ Error: {response.text}")
+                        print(f"API request failed with status code {response.status_code}: {response.text}. Check the API endpoint, request body, and headers.")
                         self._write_error(text_type, row, index, response, output_csv, api_name)
                         continue
 
@@ -211,13 +213,17 @@ class TextAnalyzer:
                     with open(output_csv, "a", newline="", encoding="UTF-8") as file:
                         writer = csv.writer(file)
                         writer.writerow(row)
-                    task_status[self.task_id] = {"status": "running", "progress": index/len(df)*100}
+                    with shared_data.lock:
+                        api_progress[api_name] = index/len(df)*100
+                    overall_progress = sum(api_progress.values())/len(api_progress)
+                    task_status[self.task_id] = {**task_status[self.task_id], "progress": overall_progress}
+                    print(f"Progress: {overall_progress}%")
                 return output_csv
             else:
                 raise Exception("Only CSV files are supported")
 
         except KeyError as e:
-            raise KeyError(f"❌ Error: missing {e} key, check the CSV format in the README.md file")
+            raise KeyError(f"KeyError: '{e}' not found. Ensure the key exists in the response data or the input CSV. Check 'api_endpoints.py' for expected keys.")
 
     def _get_nested_value(self, dictionary, keys):
         """
@@ -254,29 +260,32 @@ def set_headers(output_csv: str, file_type: str) -> None:
     -------
     None
     """
-    if file_type == "csv":
-        init_row = [
-            "Text Type",
-            "API Name",
-            "File Name",
-            "Dataset",
-            "ai_score",
-            "human_score",
-            "Error_message",
-        ]
-    else:
-        init_row = [
-            "Text Type",
-            "API Name",
-            "File Name",
-            "ai_score",
-            "human_score",
-            "Error_message",
-        ]
+    try:
+        if file_type == "csv":
+            init_row = [
+                "Text Type",
+                "API Name",
+                "File Name",
+                "Dataset",
+                "ai_score",
+                "human_score",
+                "Error_message",
+            ]
+        else:
+            init_row = [
+                "Text Type",
+                "API Name",
+                "File Name",
+                "ai_score",
+                "human_score",
+                "Error_message",
+            ]
 
-    with open(output_csv, "a", newline="", encoding="UTF-8") as file:
-        writer = csv.writer(file)
-        writer.writerow(init_row)
+        with open(output_csv, "a", newline="", encoding="UTF-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(init_row)
+    except Exception as e:
+        raise Exception(f"Error: Invalid output CSV file path provided. Please specify a valid file path ending in '.csv'.")
 
 
 class HandleInput:
@@ -359,6 +368,8 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
     output_csv = "output.csv"
     copyleaks_scan_id = os.getenv('COPYLEAKS_SCAN_ID')
     api_settings = HandleInput().api_constructor(selected_endpoints)
+    for api_name, api in api_settings.items():
+        api_progress[api_name] = 0
     
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -366,12 +377,12 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
         for api_name, api in api_settings.items():
             text_analyzer = TextAnalyzer(output_csv, api, api_name, task_id, copyleaks_scan_id)
             if input_csv != "":
-                future = (executor.submit(text_analyzer.process_files, input_csv, "", True))
+                future = (executor.submit(text_analyzer.process_files, input_csv, "", True, selected_endpoints))
                 futures.append(future)
     for future in concurrent.futures.as_completed(futures):
             try:
                 future.result()
             except Exception as e:
-                raise Exception(f"An error occurred: {e}")
+                raise Exception(f"Exception in processing: {e}. Check for issues in 'text_analyzer.process_files' method. Ensure the input data and API settings are correct.")
     
     return output_csv
