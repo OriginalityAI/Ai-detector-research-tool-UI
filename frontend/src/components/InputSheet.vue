@@ -87,9 +87,14 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
 const poll = async (taskId: string) => {
   try {
     const response = await fetch(`api/results/${taskId}/`);
-    const clone = response.clone()
-    const data = await response.json();
-    if (data.status === 'running') {
+    let data; 
+    console.log(response.headers.get('Content-Type'))
+    if (response.headers.get('Content-Type')?.endsWith('octet-stream')) {
+      data = await response.json()
+    } else {
+      data = await response.blob()
+    } 
+    if (data[taskId] === 'running') {
       console.log(PENDING_MSG.running);
       pending.value.msg = PENDING_MSG.running;
       setTimeout(() => poll(taskId), 30000);
@@ -98,12 +103,11 @@ const poll = async (taskId: string) => {
       console.log(PENDING_MSG.failed);
       pending.value.msg = PENDING_MSG.failed;
       nextTick(() => pending.value.status = false)
-    } else if (response.ok && response.status === 200 && data.status !== 'running') {
+    } else if (data[taskId]) {
       console.log(PENDING_MSG.completed);
       pending.value.msg = PENDING_MSG.completed;
-      const blob = await clone.blob()
-      zipBlob.value = blob
-      const unzipped = await loadZip(blob)
+      zipBlob.value = data
+      const unzipped = await loadZip(data)
       if (unzipped) {
         nextTick(() => pending.value.status = false)
         resultsStore.updateResults(unzipped)
