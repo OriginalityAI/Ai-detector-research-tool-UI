@@ -213,36 +213,8 @@ class TextAnalyzer:
                         writer.writerow(row)
                     task_status[self.task_id] = {"status": "running", "progress": index/len(df)*100}
                 return output_csv
-                    
-
-
             else:
-                for filename in os.listdir(input_path):
-                    if filename.endswith(".txt"):
-                        with open(os.path.join(input_path, filename), "r", encoding="UTF-8") as f:
-                            text = f.read()
-
-                        body[text_key] = text
-                        parameters = body.copy()
-
-
-                        response = requests.post(endpoint, headers=headers, json=parameters, timeout=60)
-
-                        if response.status_code != 200:
-                            print(f"❌ Error: {response.text}")
-                            with open(output_csv, "a", newline="", encoding="UTF-8") as file:
-                                writer = csv.writer(file)
-                                writer.writerow(
-                                    [text_type, api_name, filename, "Error", "Error", f"Error: {response.text}"]
-                                )
-                            continue
-
-                        data = response.json()
-                        row = [text_type, api_name, filename] + self._extract_values(data, api_response)
-
-                        with open(output_csv, "a", newline="", encoding="UTF-8") as file:
-                            writer = csv.writer(file)
-                            writer.writerow(row)
+                raise Exception("Only CSV files are supported")
 
         except KeyError as e:
             raise KeyError(f"❌ Error: missing {e} key, check the CSV format in the README.md file")
@@ -364,12 +336,7 @@ class HandleInput:
                 set_headers(output_csv, "csv")
             else:
                 set_headers(output_csv, "txt")
-        else:
-            output_csv += ".csv"
-            if input_csv.endswith(".csv"):
-                set_headers(output_csv, "csv")
-            else:
-                set_headers(output_csv, "txt")
+
         return output_csv, input_csv
 
    

@@ -26,6 +26,10 @@ app.add_middleware(
 
 task_status = {}
 
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
 @app.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
     if task_status[task_id] == "failed" or (task_id not in task_status):
