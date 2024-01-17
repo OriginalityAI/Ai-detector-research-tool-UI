@@ -21,6 +21,7 @@
     "@mdi/font": "^7.3.67",
     "@mdi/svg": "^7.3.67",
     "fortawesome": "^0.0.1-security",
+    "jszip": "^3.10.1",
     "pinia": "^2.1.7",
     "sass": "^1.69.7",
     "sass-loader": "^13.3.3",

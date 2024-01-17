@@ -1,15 +1,15 @@
 <template>
   <main>
-    <v-container justify-center class="w-50">
+    <v-container justify-center class="content-container">
       <v-row no-gutters justify="center" align="center" class="pt-4 pb-4">
           <img class="brand" src="/pt-logo-small.png" />
       </v-row>
-      <v-row no-gutters justify="center" class="pb-12">
+      <v-row no-gutters justify="center" class="pb-16">
           <span class="text-h3 text-center font-weight-black">
             AI Detector<br>Efficacy Research Tool
           </span>
       </v-row>
-      <v-row no-gutters class="pb-12">
+      <v-row no-gutters class="pb-16 px-16">
         <div class="glass sheet">
           <p class="text-h4 font-weight-bold pt-6 pl-6 pr-6 pb-4">What is this tool?</p>
           <p class="text-h6 font-weight-medium pb-6 pl-6 pr-6">
@@ -31,13 +31,14 @@
         </div>
       </v-row>
       <InputSheet />
-      
+      <ResultsContainer />
     </v-container>
   </main>
 </template>
 
 <script setup lang="ts">
 import InputSheet from './components/InputSheet.vue';
+import ResultsContainer from './components/ResultsContainer.vue';
 
 </script>
 
@@ -91,5 +92,11 @@ main {
   --bright-orange: #ffbb59;
   --light-dimmed-text: #babcd1;
   --mid-purple: #5a4d8e;
+}
+
+@media only screen and (min-width: 1200px) {
+  .content-container {
+  width: 1248px;
+}
 }
 </style>

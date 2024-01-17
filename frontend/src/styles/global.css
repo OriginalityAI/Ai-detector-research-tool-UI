@@ -12,4 +12,10 @@
 
 .sheet {
   border-radius: 16px;
+  box-shadow: 0 0 90px rgba(89, 117, 255, .5), 20px 0 40px rgba(0, 0, 0, .5)
+}
+
+.rates-table {
+  background-color: #d9d9d9;
+  border-radius: 16px;
 }

@@ -336,6 +336,7 @@ class HandleInput:
                 set_headers(output_csv, "csv")
             else:
                 set_headers(output_csv, "txt")
+
         return output_csv, input_csv
 
    
