@@ -86,7 +86,8 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
 
 const poll = async (taskId: string) => {
   try {
-    const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`);
+    const response = await fetch(`/api/results/${taskId}/`);
+    // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
     let data;
     data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
     console.log('headers', response.headers.get('Content-Type'))
@@ -143,7 +144,8 @@ const handleSubmit = async (input: UserInput): Promise<void> => {
       redirect: 'follow'
     };
     try {
-      const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions)
+      const response = await fetch("/api/analyze/", requestOptions)
+      // const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions) // docker route
       const data = await response.json()
       console.log(data)
       pending.value.status = true;

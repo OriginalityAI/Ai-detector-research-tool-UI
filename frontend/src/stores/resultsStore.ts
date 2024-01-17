@@ -24,10 +24,10 @@ export const useResultsStore = defineStore('resultsStore', () => {
   const feed = computed(() =>
     results.value.sort((resultA: Folder, resultB: Folder) =>
       orderBy.value.descending
-        ? Number(resultA.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]]) -
-          Number(resultB.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]])
-        : Number(resultB.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]]) -
+        ? Number(resultB.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]]) -
           Number(resultA.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]])
+        : Number(resultA.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]]) -
+          Number(resultB.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]])
     )
   )
 
