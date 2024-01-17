@@ -1,0 +1,9 @@
+__pycache__/
+.vscode/
+Full_output_CSV's/
+benchmark_outputs/
+benchmark_set_separated/
+output_backup/
+output/
+.env
+.DS_Store
