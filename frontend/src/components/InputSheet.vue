@@ -86,43 +86,42 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
 
 const poll = async (taskId: string) => {
   try {
-    const response = await fetch(`api/results/${taskId}/`);
-    let data; 
-    console.log(response.headers.get('Content-Type'))
-    if (response.headers.get('Content-Type')?.endsWith('octet-stream')) {
-      data = await response.json()
-    } else {
-      data = await response.blob()
-    } 
+    const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`);
+    let data;
+    data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
+    console.log('headers', response.headers.get('Content-Type'))
+    console.log('data', data)
+    // running state
     if (data[taskId] === 'running') {
       console.log(PENDING_MSG.running);
       pending.value.msg = PENDING_MSG.running;
       setTimeout(() => poll(taskId), 30000);
-
-    } else if (data.status === 'failed') {
-      console.log(PENDING_MSG.failed);
-      pending.value.msg = PENDING_MSG.failed;
-      nextTick(() => pending.value.status = false)
-    } else if (data[taskId]) {
+    // success state
+    } else if (data.blob) {
       console.log(PENDING_MSG.completed);
       pending.value.msg = PENDING_MSG.completed;
-      zipBlob.value = data
-      const unzipped = await loadZip(data)
+      zipBlob.value = data.blob
+      const unzipped = await loadZip(data.blob)
       if (unzipped) {
         nextTick(() => pending.value.status = false)
         resultsStore.updateResults(unzipped)
       }
+    // fail state
+    } else if (data.status === 'failed') {
+      console.log(PENDING_MSG.failed);
+      pending.value.msg = PENDING_MSG.failed;
+      nextTick(() => pending.value.status = false)
+    // error state
     } else if (data.error) {
       nextTick(() => pending.value.status = false)
       pending.value.msg = `${data.error}`;
       console.error(`Error from server: ${data.error}`);
-
-    } else {
-      nextTick(() => pending.value.status = false)
-      pending.value.msg = `${data.error}`;
-      console.error('Unrecognized response status, stopping polling.');
     }
-
+    // } else {
+    //   nextTick(() => pending.value.status = false)
+    //   pending.value.msg = `${data.error}`;
+    //   console.error('Unrecognized response status, stopping polling.');
+    // }
   } catch (error) {
     // If there's a network or server error, log the error and retry after 30 seconds
     console.error('An error occurred while polling:', error);
@@ -144,7 +143,7 @@ const handleSubmit = async (input: UserInput): Promise<void> => {
       redirect: 'follow'
     };
     try {
-      const response = await fetch("/api/analyze/", requestOptions)
+      const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions)
       const data = await response.json()
       console.log(data)
       pending.value.status = true;
