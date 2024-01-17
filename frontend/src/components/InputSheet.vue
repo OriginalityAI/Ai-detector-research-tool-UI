@@ -1,7 +1,7 @@
 <template>
   <v-container class="pt-0 px-0 pb-16">
     <v-sheet color="#fafafa" class="sheet">
-      <v-form ref="form" validate-on="submit lazy" @submit.prevent="handleSubmit(input)">
+      <v-form ref="form" validate-on="submit lazy" @submit.prevent="handleSubmit">
         <v-row no-gutters align="center" class="pt-6 px-6 pb-6">
           <v-col cols="auto">
             <span class="text-h4 text-grey font-weight-bold">Data</span>
@@ -47,8 +47,7 @@
         </v-row>
         <v-row no gutters justify="center" class="pb-12">
           <v-col cols="auto">
-            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit(input)"
-              type="submit"><span class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit()"><span class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
                 icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
           </v-col>
         </v-row>
@@ -102,28 +101,32 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
 
 const poll = async (taskId: string) => {
   try {
-    const response = await fetch(`/api/results/${taskId}/`);
-    // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
+    console.log(`poll bang!`)
+    // const response = await fetch(`/api/results/${taskId}/`);
+    const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
     let data;
     data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
     console.log('headers', response.headers.get('Content-Type'))
     console.log('data', data)
     // running state
-    if (data[taskId] === 'running') {
-      console.log(PENDING_MSG.running);
-      pending.value.msg = PENDING_MSG.running;
-      setTimeout(() => poll(taskId), 30000);
-      // success state
-    } else if (data.blob) {
+    if (data.blob) {
       console.log(PENDING_MSG.completed);
       pending.value.msg = PENDING_MSG.completed;
+      pending.value.progress = null
       zipBlob.value = data.blob
       const unzipped = await loadZip(data.blob)
+      console.log(unzipped)
       if (unzipped) {
         nextTick(() => pending.value.status = false)
         resultsStore.updateResults(unzipped)
       }
       // fail state
+    } else if (data[taskId].status === 'running') {
+      console.log(PENDING_MSG.running);
+      pending.value.msg = PENDING_MSG.running;
+      pending.value.progress = Number(data[taskId].progress).toFixed(0);
+      setTimeout(() => poll(taskId), 5000);
+      // success state
     } else if (data.status === 'failed') {
       console.log(PENDING_MSG.failed);
       pending.value.msg = PENDING_MSG.failed;
@@ -147,13 +150,13 @@ const poll = async (taskId: string) => {
   }
 }
 
-const handleSubmit = async (input: UserInput): Promise<void> => {
+const handleSubmit = async (): Promise<void> => {
   const valid = await form.value!.validate()
   if (valid.valid) {
-    const detectorPayload = formatDetectorPayload(input);
-    const rawFile = toRaw(input.csv![0])
+    const detectorPayload = formatDetectorPayload(input.value);
+    const rawFile = toRaw(input.value.csv![0])
     const formdata = new FormData();
-    formdata.append("csvFile", rawFile, input.csv![0].name);
+    formdata.append("csvFile", rawFile, input.value.csv![0].name);
     formdata.append("api_keys", JSON.stringify(detectorPayload));
     const requestOptions: RequestInit = {
       method: 'POST',
@@ -161,8 +164,9 @@ const handleSubmit = async (input: UserInput): Promise<void> => {
       redirect: 'follow'
     };
     try {
-      const response = await fetch("/api/analyze/", requestOptions)
-      // const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions) // docker route
+      // const response = await fetch("/api/analyze/", requestOptions)
+      console.log('handle bang!')
+      const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions) // docker route
       const data = await response.json()
       console.log(data)
       pending.value.status = true;

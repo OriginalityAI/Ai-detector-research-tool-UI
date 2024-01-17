@@ -51,6 +51,11 @@
           <span class="text-h6 font-weight-black">{{ pending.msg }}</span>
         </v-col>
       </v-row>
+      <v-row v-if="pending.progress" no-gutters justify="center" class="pt-6">
+        <v-col cols="auto">
+          <span class="text-h6 font-weight-black">{{ `Progress: ${pending.progress}%`}}</span>
+        </v-col>
+      </v-row>
       <v-row v-else v-for="folder in resultStore.feed" :key="folder.name" no-gutters class="pb-12">
         <DetectorResult :result="folder" />
       </v-row>

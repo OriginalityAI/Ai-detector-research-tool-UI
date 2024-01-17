@@ -33,6 +33,7 @@ export const useResultsStore = defineStore('resultsStore', () => {
 
   const pending: Ref<Pending> = ref({
     status: false,
+    progress: null,
     msg: null,
   })
 
