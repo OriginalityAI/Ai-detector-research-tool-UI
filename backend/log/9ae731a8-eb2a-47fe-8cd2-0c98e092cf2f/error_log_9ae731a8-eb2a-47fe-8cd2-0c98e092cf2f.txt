@@ -1,3 +1,0 @@
-An error occurred at the following location: failed
-error: Error creating log folder for failed task: [Errno 2] No such file or directory: './csvFile.csv'. Check file system permissions and available storage.
-message: None

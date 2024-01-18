@@ -1,3 +1,0 @@
-An error occurred at the following location: text analyzer
-error: An error occurred: No columns to parse from file
-message: None
