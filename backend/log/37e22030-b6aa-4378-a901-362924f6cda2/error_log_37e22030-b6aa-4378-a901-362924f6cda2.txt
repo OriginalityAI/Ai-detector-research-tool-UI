@@ -1,3 +1,0 @@
-An error occurred at the following location: text analyzer
-error: Exception in processing: Error tokenizing data. C error: EOF inside string starting at row 1. Check for issues in 'text_analyzer.process_files' method. Ensure the input data and API settings are correct.
-message: None
