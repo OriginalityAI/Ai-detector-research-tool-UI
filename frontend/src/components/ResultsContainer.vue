@@ -1,5 +1,5 @@
 <template>
-  <v-container class="px-0 pb-12">
+  <v-container id="results-container" class="px-0 pb-12">
     <!-- <v-row no-gutters justify="center" class="pb-12">
       <v-col cols="auto">
         <v-btn class="text-black" size="x-large" @click="handleUnzip">Unzip</v-btn>
@@ -36,7 +36,7 @@
           </v-btn>
         </v-col>
       </v-row>
-      <v-row no-gutters v-if="!pending.status && !results.length" justify="center" class="brain">
+      <v-row no-gutters v-if="!pending.status && !results.folders.length" justify="center" class="brain">
         <v-col cols="auto">
           <OriginalitySVG />
         </v-col>
@@ -58,15 +58,38 @@
           </v-col>
         </v-row>
       </div>
-      <div v-else-if="errorResult.status">
+      <div v-else-if="testResult.status" class="pb-12">
+        <v-row no-gutters justify="center" class="pt-6">
+          <v-col cols="auto">
+            <span class="text-h4 font-weight-black">Test Results</span>
+          </v-col>
+        </v-row>
+        <v-row no-gutters justify="center" class="pt-6">
+          <v-col cols="auto">
+            <span class="text-h6 font-weight-black">{{ testResult.msg }}</span>
+          </v-col>
+        </v-row>
+        <v-row v-if="testResult.blob" no-gutters justify="center" class="pt-6">
+          <v-col cols="auto">
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleDownloadZip(testResult.blob)"><span
+                  class="text-h6 font-weight-black pr-2">Download Results</span></v-btn>
+          </v-col>
+        </v-row>
+      </div>
+      <div v-else-if="errorResult.status" class="pb-12">
         <v-row no-gutters justify="center" class="pt-6">
           <v-col cols="auto">
             <span class="text-h4 font-weight-black">Error</span>
           </v-col>
         </v-row>
+        <v-row no-gutters justify="center" class="pt-6">
+          <v-col cols="auto">
+            <span class="text-h6 font-weight-black">{{ errorResult.msg }}</span>
+          </v-col>
+        </v-row>
         <v-row v-if="errorResult.blob" no-gutters justify="center" class="pt-6">
           <v-col cols="auto">
-            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleDownloadLog"><span
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleDownloadZip(errorResult.blob)"><span
                   class="text-h6 font-weight-black pr-2">Download Log</span></v-btn>
           </v-col>
         </v-row>
@@ -86,11 +109,11 @@ import { storeToRefs } from 'pinia';
 // import { loadZip } from '@/utils/loadZip'
 
 const resultStore = useResultsStore()
-const { orderBy, zipBlob, pending, results, errorResult } = storeToRefs(resultStore)
+const { orderBy, pending, results, errorResult, testResult } = storeToRefs(resultStore)
 
 const handleDownloadAll = () => {
-  if (zipBlob.value) {
-    const url = window.URL.createObjectURL(zipBlob.value);
+  if (results.value.blob) {
+    const url = window.URL.createObjectURL(results.value.blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'output.zip';
@@ -103,9 +126,9 @@ const handleDownloadAll = () => {
   }
 }
 
-const handleDownloadLog = () => {
-  if (errorResult.value.blob) {
-    const url = window.URL.createObjectURL(errorResult.value.blob);
+const handleDownloadZip = (blob: Blob) => {
+  if (blob) {
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'output.zip';

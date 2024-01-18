@@ -15,9 +15,15 @@ export const PENDING_MSG = {
 }
 
 export const BAD_RESULT_MSG = {
+  analysisFailed: 'Analysis of your csv has failed, download the error log for more details',
   testFailed: 'Our test of your csv has failed, download the error log for more details',
   pollFailed: 'Your analysis has failed due to an error, download the error logs for more details',
   loglessError: 'Your analysis has failed due to an error, though no error log was found',
   noResults: 'No results found',
-  unknown: 'An unknown error occured'
+  unknown: 'An unknown error occured',
+  zipFailure: 'There was a problem unzipping your file.'
+}
+
+export const TEST_RESULT_MSG = {
+  pass: 'Check your output zip to verify that each detector is responding correctly.'
 }
