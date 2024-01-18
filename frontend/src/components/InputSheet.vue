@@ -84,6 +84,8 @@ const resultsStore = useResultsStore()
 const { input } = storeToRefs(inputStore);
 const { pending, zipBlob, errorResult } = storeToRefs(resultsStore);
 
+const testing = false;
+
 const form: Ref<any> = ref(null);
 
 type ValidationRule = (v: File[]) => string | boolean
@@ -102,76 +104,71 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
 }
 
 const testPoll = async (taskId: string): Promise<boolean | undefined> => {
-  try {
-    const response = await fetch(`/api/results/${taskId}/`);
-    // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
-    let data;
-    data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
-    console.log('headers', response.headers.get('Content-Type'))
-    console.log('data', data)
-    if (data.blob) {
-      response.headers.forEach((value, name) => {
-        console.log(`${name}: ${value}`);
-      });
-      console.log("content disposition", response.headers.keys(), response.headers.values())
-      console.log("content disposition", response.headers.get('Content-Disposition'))
-      let filename = ''
-      if (response.headers.get('Content-Disposition')) {
-        // console.log('regexed', response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/), typeof response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)[1]);
-        filename = response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)![1];
+  return new Promise((resolve, reject) => {
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/results/${taskId}/`);
+        // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
+        let data;
+        data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
+        console.log('headers', response.headers.get('Content-Type'))
+        console.log('data', data)
+        if (data.blob) {
+          response.headers.forEach((value, name) => {
+            console.log(`${name}: ${value}`);
+          });
+          console.log("content disposition", response.headers.keys(), response.headers.values())
+          console.log("content disposition", response.headers.get('Content-Disposition'))
+          let filename = ''
+          if (response.headers.get('Content-Disposition')) {
+            filename = response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)![1];
+          }
+          if (filename.startsWith('output')) {
+            resolve(true);
+          } else if (filename.startsWith('error_log')) {
+            errorResult.value.msg = BAD_RESULT_MSG.testFailed;
+            errorResult.value.blob = data.blob
+            errorResult.value.status = true;
+            pending.value.status = false;
+            resolve(false);
+          } else {
+            console.error('An unknown error occured on file response.')
+            errorResult.value.msg = BAD_RESULT_MSG.unknown;
+            errorResult.value.status = true;
+            pending.value.status = false;
+            resolve(false);
+          }
+        } else if (data[taskId].status === 'running') {
+          pending.value.msg = PENDING_MSG.testing;
+          setTimeout(() => resolve(testPoll(taskId)), 5000);
+        } else if (data.error) {
+          if (data.error === 'No error log found') {
+            errorResult.value.msg = BAD_RESULT_MSG.loglessError;
+            errorResult.value.status = true;
+            pending.value.status = false;
+            resolve(false);
+          } else if (data.error === 'No results found') {
+            errorResult.value.msg = BAD_RESULT_MSG.noResults;
+            errorResult.value.status = true;
+            pending.value.status = false;
+            resolve(false);
+          } else {
+            errorResult.value.msg = BAD_RESULT_MSG.unknown;
+            errorResult.value.status = true;
+            pending.value.status = false;
+            resolve(false);
+          }
+        }
+      } catch (error) {
+        console.error('An error occurred while polling:', error);
+        console.log('Retrying in 30 seconds...');
+        setTimeout(() => poll(taskId), 30000);
       }
-      // Success state
-      if (filename.startsWith('output')) {
-        return true
+    };
 
-        // Logged error state
-      } else if (filename.startsWith('error_log')) {
-        errorResult.value.msg = BAD_RESULT_MSG.testFailed;
-        errorResult.value.blob = data.blob
-        errorResult.value.status = true;
-        pending.value.status = false;
-        return false
-
-        // Unknown file error state
-      } else {
-        console.error('An unknown error occured on file response.')
-        errorResult.value.msg = BAD_RESULT_MSG.unknown;
-        errorResult.value.status = true;
-        pending.value.status = false;
-        return false
-      }
-
-      // Running state
-    } else if (data[taskId].status === 'running') {
-      pending.value.msg = PENDING_MSG.testing;
-      setTimeout(() => testPoll(taskId), 5000);
-
-      // Logless error states
-    } else if (data.error) {
-      if (data.error === 'No error log found') {
-        errorResult.value.msg = BAD_RESULT_MSG.loglessError;
-        errorResult.value.status = true;
-        pending.value.status = false;
-        return false
-      } else if (data.error === 'No results found') {
-        errorResult.value.msg = BAD_RESULT_MSG.noResults;
-        errorResult.value.status = true;
-        pending.value.status = false;
-        return false
-      } else {
-        errorResult.value.msg = BAD_RESULT_MSG.unknown;
-        errorResult.value.status = true;
-        pending.value.status = false;
-        return false
-      }
-    }
-  } catch (error) {
-    // If there's a network or server error, log the error and retry after 30 seconds
-    console.error('An error occurred while polling:', error);
-    console.log('Retrying in 30 seconds...');
-    setTimeout(() => poll(taskId), 30000);
-  }
-}
+    poll();
+  });
+};
 
 const poll = async (taskId: string) => {
   try {
@@ -183,7 +180,7 @@ const poll = async (taskId: string) => {
     console.log('data', data)
     // running state
     if (data.blob) {
-      const filename = response.headers.get('Content-Disposition')!.match(/filename="([^"]+)"/)![0];
+      const filename = response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)![1];
       // Success state
       if (filename.startsWith('output')) {
         pending.value.msg = PENDING_MSG.completed;
@@ -266,7 +263,7 @@ const createTestCsv = (file: File): Promise<Blob> => {
         URL.revokeObjectURL(url);
         resolve(blob);
       },
-      error: function(err) {
+      error: function (err) {
         reject(err);
       }
     })
@@ -303,7 +300,8 @@ const handleSubmit = async (): Promise<void> => {
       console.log('testData', testData)
 
       // if the test passes proceed to main poll with full input csv
-      if (await testPoll(testData.task_id)) {
+      const testResult = await testPoll(testData.task_id);
+      if (testResult) {
         const formdata = new FormData();
         formdata.append("csvFile", rawFile, input.value.csv![0].name);
         formdata.append("api_keys", JSON.stringify(detectorPayload));
