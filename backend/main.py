@@ -1,18 +1,19 @@
-
 import asyncio
+import io
+import json
+import os
 import shutil
 import time
 import uuid
-from text_analyzer import text_analyzer_main
-from analyze_output import csv_analyzer_main
-from fastapi import FastAPI, UploadFile, Form, BackgroundTasks
-from fastapi.responses import FileResponse
-import zipfile 
-import os
-import io
-import json
+import zipfile
+from fastapi import BackgroundTasks, FastAPI, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+
+from analyze_output import csv_analyzer_main
 from task_status import shared_data
+from text_analyzer import text_analyzer_main
+
 task_status = shared_data.task_status
 
 
@@ -29,23 +30,50 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
+    """
+    This function is the root endpoint of the API. 
+    When accessed, it returns a simple greeting message.
+    Used for testing that the API is running.
+
+    Returns
+    -------
+    JSON
+        A JSON object containing a greeting message.
+    """
     return {"message": "Hello World"}
 
 @app.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
+    """
+    This function retrieves the results of a task given its ID. If the task has failed, it returns the error log.
+    If the task is still running, it returns the current status of the task.
+    If the task has completed, it returns the output file and adds a cleanup task to delete the output file after it is downloaded.
+
+    Parameters
+    ----------
+    task_id : str
+        The ID of the task.
+    background_tasks : BackgroundTasks
+        The background tasks where the cleanup task will be added.
+
+    Returns
+    -------
+    dict or FileResponse
+        A dictionary containing the task status or an error message, or a FileResponse containing the output file or error log.
+    """
     if task_status[task_id]["status"] == "failed" or (task_id not in task_status):
         if os.path.exists(f"./log/{task_id}/error_log_{task_id}.txt"):
             zipped_error_log = zip_files(f"./log/{task_id}", task_id)
+            background_tasks.add_task(cleanup, [f"./log/{task_id}"])
             return FileResponse(zipped_error_log, media_type="application/octet-stream", filename=f"error_log_{task_id}.zip")
         else:
             return {"task_id": task_status[task_id], "error": "No error log found", "message": "No error log found"}
             
     if (task_status[task_id]["status"] == "running"):
-        return {**task_status}
+        return task_status[task_id]
 
     if os.path.exists(f"./output_{task_id}.zip"):
-        # uncommenting this deletes the zip file after it is downloaded
-        # background_tasks.add_task(cleanup, [f"./output_{task_id}.zip"])
+        background_tasks.add_task(cleanup, [f"./output_{task_id}.zip"]) # uncommenting this deletes the zip file after it is downloaded
         return FileResponse(f"./output_{task_id}.zip", media_type="application/octet-stream", filename=f"output_{task_id}.zip")
     elif os.path.exists(f"./log/error_log_{task_id}.txt"):
         with open("./log/error_log.txt", "r") as f:
@@ -53,8 +81,26 @@ async def get_results(task_id: str, background_tasks: BackgroundTasks):
     else:
         return {"error": "No results found"}
 
-@app.post("/analyze/")
+@app.post("/analyze_text")
 async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(...), csvFile: UploadFile = Form(...)):
+    """
+    This function initiates the text analysis process. It first sets the CSV file to be used for the analysis,
+    generates a unique task ID, and then adds the task of processing the file to the background tasks.
+
+    Parameters
+    ----------
+    background_tasks : BackgroundTasks
+        The background tasks where the file processing task will be added.
+    api_keys : str
+        The API keys in a JSON format.
+    csvFile : UploadFile
+        The CSV file to be used for the analysis.
+
+    Returns
+    -------
+    dict
+        A dictionary containing a message indicating that the analysis has started and the task ID.
+    """
     try: 
         csv_file_path = await set_csv(csvFile)
     except Exception as e:
@@ -73,6 +119,23 @@ async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(.
         return {"error": f"An error occurred: {e}"}
     
 async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
+    """
+    This function processes the given CSV file and runs the text and CSV analyzers.
+
+    Parameters
+    ----------
+    api_keys_dict : dict
+        A dictionary containing the API keys.
+    csv_file_path : str
+        The path to the CSV file to be processed.
+    task_id : str
+        The ID of the task.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the status of the task and any error messages if an error occurred.
+    """
     try:
         # set the api keys in the .env file
         selected_endpoints = {}
@@ -90,6 +153,7 @@ async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
         # now we have the api keys in the .env file remove the api keys from the selected_endpoints dict
         if "COPYLEAKS_SCAN_ID" in selected_endpoints:
             del selected_endpoints["COPYLEAKS_SCAN_ID"]
+
         selected_endpoints = {key.split('_')[0]: value for key, value in selected_endpoints.items() if value}
 
 
@@ -106,7 +170,6 @@ async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
             # run the csv analyzer
             output_folder = csv_analyzer_main(output_csv, task_id)
         except Exception as e:
-
             create_failed_folder([csv_file_path, output_csv], "csv analyzer", e, task_id)
             task_status[task_id]["status"] = "failed"
             return {"error": f"Error during CSV analysis: {e}. Check the CSV analyzer's configuration and input data."}
@@ -133,6 +196,20 @@ async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
     
 
 def zip_files(folder: str, task_id: str):
+    """
+    Create a zip file from the contents of a folder.
+
+    Parameters
+    ----------
+    folder : str
+        The path to the folder that needs to be zipped.
+    task_id : str
+        The id of the task for which the folder is being zipped.
+
+    Returns
+    -------
+    None
+    """
     filenames = [os.path.join(root, file) for root, dirs, files in os.walk(folder) for file in files]
     zip_io = io.BytesIO()
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
@@ -146,6 +223,19 @@ def zip_files(folder: str, task_id: str):
     return zip_file_path
 
 async def set_csv(csvFile: UploadFile = Form(...)):
+    """
+    Set the csv file to be used for the analysis.
+
+    Parameters
+    ----------
+    csvFile : UploadFile
+        The csv file to be used for the analysis.
+
+    Returns
+    -------
+    csv_file_path : str
+        The path to the csv file that has been set for the analysis.
+    """
     csv_file_path = "./csvFile.csv"
     try:
         with open(csv_file_path, "wb") as csv_file:
@@ -155,6 +245,27 @@ async def set_csv(csvFile: UploadFile = Form(...)):
         raise Exception(f"An error occurred when setting the csv file: {e}")
 
 def create_failed_folder(files: list, location: str, e: Exception, task_id: str, custom_message: str = None):
+    """
+    Create a folder to store the files from a failed task.
+
+    Parameters
+    ----------
+    files : list
+        The list of files to be moved to the log folder.
+    location : str
+        The location where the error occurred.
+    e : Exception
+        The exception that was raised.
+    task_id : str
+        The id of the task that failed.
+    custom_message : str, optional
+        A custom message to be written to the error log, by default None
+
+    Raises
+    ------
+    Exception
+        If an error occurs while creating the log folder.
+    """
     try:
         os.makedirs("log", exist_ok=True)
         os.makedirs(f"./log/{task_id}", exist_ok=True)
@@ -168,15 +279,49 @@ def create_failed_folder(files: list, location: str, e: Exception, task_id: str,
     
     
 def set_env(selected_endpoints: dict):
+    """
+    Set the API keys in the .env file.
+
+    This function takes a dictionary of selected endpoints and writes them to the .env file.
+    Each key-value pair in the dictionary is written as a separate line in the .env file.
+
+    Parameters
+    ----------
+    selected_endpoints : dict
+        A dictionary where the keys are the names of the endpoints and the values are the corresponding API keys.
+
+    Returns
+    -------
+    selected_endpoints : dict
+        The same dictionary that was passed as an argument.
+
+    Raises
+    ------
+    Exception
+        If there was an error writing to the .env file, an exception is raised with a message indicating the error.
+    """
     try:
         with open("./.env", "w") as env_file:
-                for key, value in selected_endpoints.items():
-                    env_file.write(f"{key}='{value}'\n")
+            for key, value in selected_endpoints.items():
+                env_file.write(f"{key}='{value}'\n")
         return selected_endpoints
     except Exception as e:
-        raise Exception(f"AFailed to write API keys to the .env file: {e}. Ensure the file path is correct and writable.")
+        raise Exception(f"Failed to write API keys to the .env file: {e}. Ensure the file path is correct and writable.")
 
 def cleanup(path:list):
+    """
+    Cleans up the specified files or directories.
+
+    Parameters
+    ----------
+    path : list
+        The list of file or directory paths to be cleaned up.
+
+    This function will wait for 2 seconds before attempting to delete each file or directory.
+    If the path is a directory, it will be removed along with all its contents.
+    If the path is a file, the file will be removed.
+    If the path does not exist, a message will be printed to the console.
+    """
     for file in path:
         time.sleep(2)
         if os.path.isdir(file):
