@@ -36,7 +36,7 @@ async def get_results(task_id: str, background_tasks: BackgroundTasks):
     if task_status[task_id]["status"] == "failed" or (task_id not in task_status):
         if os.path.exists(f"./log/{task_id}/error_log_{task_id}.txt"):
             zipped_error_log = zip_files(f"./log/{task_id}", task_id)
-            return FileResponse(zipped_error_log, media_type="application/octet-stream", filename=f"error_log_{task_id}.zip")
+            return FileResponse(zipped_error_log, headers={"Access-Control-Expose-Headers": "Content-Disposition","Content-Disposition": f"attachment; filename=error_log_{task_id}.zip"}, media_type="application/octet-stream", filename=f"error_log_{task_id}.zip")
         else:
             return {"task_id": task_status[task_id], "error": "No error log found", "message": "No error log found"}
             
@@ -46,7 +46,7 @@ async def get_results(task_id: str, background_tasks: BackgroundTasks):
     if os.path.exists(f"./output_{task_id}.zip"):
         # uncommenting this deletes the zip file after it is downloaded
         # background_tasks.add_task(cleanup, [f"./output_{task_id}.zip"])
-        return FileResponse(f"./output_{task_id}.zip", media_type="application/octet-stream", filename=f"output_{task_id}.zip")
+        return FileResponse(f"./output_{task_id}.zip", headers={"Access-Control-Expose-Headers": "Content-Disposition", "Content-Disposition": f"attachment; filename=output_{task_id}.zip"}, media_type="application/octet-stream", filename=f"output_{task_id}.zip")
     elif os.path.exists(f"./log/error_log_{task_id}.txt"):
         with open("./log/error_log.txt", "r") as f:
             return {"error": f.read()}
