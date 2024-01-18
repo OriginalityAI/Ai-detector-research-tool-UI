@@ -105,7 +105,7 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
 
 const testPoll = async (taskId: string): Promise<boolean | undefined> => {
   return new Promise((resolve, reject) => {
-    const poll = async () => {
+    const promisePoll = async () => {
       try {
         const response = await fetch(`/api/results/${taskId}/`);
         // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
@@ -166,7 +166,7 @@ const testPoll = async (taskId: string): Promise<boolean | undefined> => {
       }
     };
 
-    poll();
+    promisePoll();
   });
 };
 
@@ -273,7 +273,7 @@ const createTestCsv = (file: File): Promise<Blob> => {
 const handleSubmit = async (): Promise<void> => {
   // validate input
   const valid = await form.value!.validate()
-  
+
   if (valid.valid) {
     // reset error state
     resultsStore.resetErrorResult()
