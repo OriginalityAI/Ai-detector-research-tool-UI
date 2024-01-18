@@ -76,6 +76,7 @@ import { nextTick } from 'vue';
 import { toRaw } from 'vue';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
+import Papa from 'papaparse'
 
 const inputStore = useInputStore();
 const resultsStore = useResultsStore()
@@ -244,17 +245,33 @@ const poll = async (taskId: string) => {
 
 const createTestCsv = (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const csvContent = e.target!.result as string;
-      const rows = csvContent!.split('\n').slice(0, 5).join('\n');
-      const blob = new Blob([rows], { type: 'text/csv' });
-      resolve(blob);
-    };
-    reader.onerror = (e) => reject(e);
-    reader.readAsText(file);
-  });
-};
+    Papa.parse(file, {
+      complete: function (results) {
+        // Assuming the first row is headers
+        const rows = results.data.slice(0, 5);
+        const csvContent = Papa.unparse(rows);
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        // Create a link and set its href to the object URL created from the blob
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'test.csv'; // Specify the file name for download
+
+        // Append the link to the document, trigger a click, and then remove it
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up the object URL
+        URL.revokeObjectURL(url);
+        resolve(blob);
+      },
+      error: function(err) {
+        reject(err);
+      }
+    })
+  })
+}
 
 const handleSubmit = async (): Promise<void> => {
   // validate input
