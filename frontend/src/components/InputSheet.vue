@@ -47,8 +47,10 @@
         </v-row>
         <v-row no gutters justify="center" class="pb-12">
           <v-col cols="auto">
+
             <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit()"><span
                 class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
+
                 icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
           </v-col>
         </v-row>
@@ -76,7 +78,9 @@ import { nextTick } from 'vue';
 import { toRaw } from 'vue';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
+
 import Papa from 'papaparse'
+
 
 const inputStore = useInputStore();
 const resultsStore = useResultsStore()
@@ -85,6 +89,19 @@ const { input } = storeToRefs(inputStore);
 const { pending, zipBlob, errorResult } = storeToRefs(resultsStore);
 
 const testing = false;
+
+const form: Ref<any> = ref(null);
+
+type ValidationRule = (v: File[]) => string | boolean
+
+const fileInputRules: ValidationRule[] = [
+  (v: File[]) => {
+    if (!v || !v.length) {
+      return 'Please upload a CSV file to be tested.'
+    }
+    return true
+  }
+]
 
 const form: Ref<any> = ref(null);
 
@@ -211,6 +228,7 @@ const poll = async (taskId: string) => {
     } else if (data[taskId].status === 'running') {
       console.log(PENDING_MSG.running);
       pending.value.msg = PENDING_MSG.running;
+
       pending.value.progress = Number(data[taskId].progress).toFixed(0);
       setTimeout(() => poll(taskId), 5000);
 
@@ -239,6 +257,7 @@ const poll = async (taskId: string) => {
     console.error('An error occurred while polling:', error);
   }
 }
+
 
 const createTestCsv = (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
@@ -288,11 +307,13 @@ const handleSubmit = async (): Promise<void> => {
     testForm.append("csvFile", testCsv, input.value.csv![0].name);
     testForm.append("api_keys", JSON.stringify(detectorPayload));
     const testReqOptions: RequestInit = {
+
       method: 'POST',
       body: testForm,
       redirect: 'follow'
     };
     try {
+
       pending.value.status = true;
       const response = await fetch("/api/analyze/", testReqOptions)
       // const response = await fetch("http://0.0.0.0:8000/analyze/", testReqOptions) // docker route
