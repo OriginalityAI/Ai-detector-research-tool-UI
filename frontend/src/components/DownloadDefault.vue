@@ -1,5 +1,5 @@
 <template>
- <v-btn class="text-none font-weight-black text-h6" size="large" color="secondary" rounded="pill">
+ <v-btn class="text-none font-weight-black text-h6 cool-btn-dark" size="large" rounded="pill">
     <span class="pr-2" @click=fetchDefaultCSV>Download Default</span><font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
   </v-btn>
 </template>
@@ -23,5 +23,5 @@ const downloadDefaultCSV = (csv_file: Blob) => {
 
 </script>
 <style lang="">
-  
+
 </style>

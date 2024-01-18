@@ -38,24 +38,20 @@
             <v-divider thickness="2" class="ml-4 mr-2"></v-divider>
           </v-col>
         </v-row>
-        <v-row no gutters justify="space-between" class="pb-12 px-16" align="center">
-          <v-col cols="auto" class="invisible">
-            <v-btn color="secondary" size="x-large" icon rounded="pill" class="text-none"></v-btn>
-          </v-col>
-
+        <v-row no-gutters justify="center">
           <v-col cols="auto">
-            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit()"><span
-                class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
-                icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
-          </v-col>
-
-          <v-col cols="auto">
-
-            <v-btn color="secondary" size="x-large" icon rounded="pill" class="text-none" @click="handleTest()"><span
-                class="text-h6 font-weight-black" @click="handleTest">Test</span></v-btn>
+            <v-btn color="secondary" icon class="text-none cool-btn-dark" @click="handleTest()"><span
+                class="text-body-1 font-weight-black" @click="handleTest">Test</span></v-btn>
           </v-col>
         </v-row>
-        <!-- <TestModal /> -->
+        <v-row no gutters justify="center" class="pb-12" align="center">
+          <v-col cols="auto">
+            <v-btn color="primary" size="x-large" rounded="lg" class="cool-btn-light text-none" @click="handleSubmit()"><span
+                class=" text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
+                icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
+          </v-col>
+        </v-row>
+        <TestModal @start-test="handleModalEmit()" />
       </v-form>
     </v-sheet>
   </v-container>
@@ -112,6 +108,11 @@ const fileInputRules: ValidationRule[] = [
 
 const handleUpdate = (name: string, updatedItem: DetectorItem) => {
   input.value.detectors[name] = updatedItem
+}
+
+const handleModalEmit = () => {
+  modalTrigger.value.fresh = false
+  handleTest();
 }
 
 const testPoll = async (taskId: string): Promise<PollResolve> => {
@@ -386,14 +387,14 @@ const scrollToResults = () => {
 // Call this function with the ID of the element you want to scroll to
 
 const handleTest = async (): Promise<void> => {
-  
+
   // validate input
   const valid = await form.value!.validate()
-  
+
   if (valid.valid) {
     // reset error state
     resultsStore.resetAll()
-    
+
     scrollToResults();
 
     // format input values for payload
@@ -434,13 +435,13 @@ const handleSubmit = async (): Promise<void> => {
   // validate input
   const valid = await form.value!.validate()
   if (valid.valid) {
-    // if (modalTrigger.value.fresh) {
-    //   modalTrigger.value = {
-    //     open: true,
-    //     fresh: false
-    //   }
-    //   return
-    // }
+    if (modalTrigger.value.fresh) {
+      modalTrigger.value = {
+        open: true,
+        fresh: false
+      }
+      return
+    }
     resultsStore.resetAll()
 
     scrollToResults();
@@ -475,4 +476,5 @@ const handleSubmit = async (): Promise<void> => {
 }
 
 </script>
-<style></style>
+<style>
+</style>

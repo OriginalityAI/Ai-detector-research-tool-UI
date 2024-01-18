@@ -17,7 +17,6 @@ task_status = shared_data.task_status
 
 
 app = FastAPI()
-router = APIRouter(prefix='/api')
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,18 +26,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
-
-@router.get("/")
+@app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@router.get("/download/default_csv")
+@app.get("/download/default_csv")
 async def get_default_csv():
     return FileResponse("./default_csv.csv", media_type="text/csv", filename="default_csv.csv")
 
-@router.get("/results/{task_id}")
+@app.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
     if task_status[task_id]["status"] == "failed" or (task_id not in task_status):
         if os.path.exists(f"./log/{task_id}/error_log_{task_id}.txt"):
@@ -60,7 +56,7 @@ async def get_results(task_id: str, background_tasks: BackgroundTasks):
     else:
         return {"error": "No results found"}
 
-@router.post("/analyze/")
+@app.post("/analyze/")
 async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(...), csvFile: UploadFile = Form(...)):
     try: 
         csv_file_path = await set_csv(csvFile)

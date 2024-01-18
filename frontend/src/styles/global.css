@@ -27,3 +27,30 @@
 .invisible {
   visibility: hidden;
 }
+
+.cool-btn-dark {
+  transition: 0.5s;
+  background-image: linear-gradient(to bottom right, #5A4D8E 0%, #5A4D8E 50%, #7859FF 100%);
+  background-size: 200% auto;
+  color: white;
+}
+
+.cool-btn-dark-inactive {
+  background-color: #a3a3a3;
+  color: white;
+}
+
+.cool-btn-dark:hover {
+  background-position: right center;
+}
+
+.cool-btn-light {
+  transition: 0.5s;
+  background-image: linear-gradient(to bottom right, #7859FF 0%, #7859FF 50%, #5A4D8E 100%);
+  background-size: 200% auto;
+  color: white;
+}
+
+.cool-btn-light:hover {
+  background-position: right center;
+}

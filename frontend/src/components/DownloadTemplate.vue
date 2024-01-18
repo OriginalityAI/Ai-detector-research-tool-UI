@@ -1,9 +1,7 @@
 <template>
-  <v-btn class="text-none font-weight-black text-h6" size="large" color="secondary" rounded="pill"
-              @click="downloadTemplate">
-              <span class="pr-2">Download Template</span><font-awesome-icon
-                icon="fa-solid fa-download"></font-awesome-icon>
-            </v-btn>
+  <v-btn class="text-none font-weight-black text-h6 cool-btn-dark" size="large" rounded="pill" @click="downloadTemplate">
+    <span class="pr-2">Download Template</span><font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
+  </v-btn>
 </template>
 <script setup lang="ts">
 
@@ -23,4 +21,5 @@ const downloadTemplate = () => {
 
 </script>
 <style lang="">
+
 </style>
