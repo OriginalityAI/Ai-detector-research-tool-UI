@@ -73,3 +73,8 @@ export type OtherResult = {
   msg: string | null
   blob: Blob | null
 }
+
+export type ModalTrigger = {
+  open: boolean
+  fresh: boolean
+}

@@ -1,4 +1,0 @@
-An error occurred at the following location: csv analyzer
-error: Unexpected error occurred while reading CSV file: Error tokenizing data. C error: Expected 6 fields in line 3, saw 7
-. Please check the CSV file for correct formatting and data integrity.
-message: None

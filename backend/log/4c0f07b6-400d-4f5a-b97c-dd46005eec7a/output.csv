@@ -1,7 +1,0 @@
-Human,ORIGINALITY,human-21,human,0.0002,0.9998
-Human,ORIGINALITY,human-22,human,0.083266666666667,0.91673333333333
-Text Type,API Name,id,dataset,ai_score,human_score,Error_message
-AI,ORIGINALITY,gpt-3-0,gpt-3,0.9999,0.0001
-AI,ORIGINALITY,gpt-3-1,gpt-3,1,0
-AI,ORIGINALITY,gpt-3-2,gpt-3,1,0
-AI,ORIGINALITY,gpt-3-3,gpt-3,0.9999,0.0001

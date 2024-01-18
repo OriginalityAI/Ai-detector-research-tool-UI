@@ -17,13 +17,10 @@
         </v-row>
         <v-row no-gutters justify="space-evenly" class="px-4 pb-6">
           <v-col cols="auto">
-            <v-btn class="text-none font-weight-black text-h6" size="large" color="secondary" rounded="pill">
-              <span class="pr-2">Download Default</span><font-awesome-icon
-                icon="fa-solid fa-download"></font-awesome-icon>
-            </v-btn>
+            <DownloadDefaultVue />
           </v-col>
           <v-col cols="auto">
-
+            <DownloadTemplateVue />
           </v-col>
         </v-row>
         <v-row no-gutters align="center" class="px-6 pb-6">
@@ -58,30 +55,47 @@
                 class="text-h6 font-weight-black" @click="handleTest">Test</span></v-btn>
           </v-col>
         </v-row>
+        <!-- <TestModal /> -->
       </v-form>
     </v-sheet>
   </v-container>
 </template>
 <script setup lang="ts">
+// Importing necessary libraries and components
 import { useInputStore } from '@/stores/inputStore'
 import { useResultsStore } from '@/stores/resultsStore'
 import { storeToRefs } from 'pinia';
 import DetectorInfo from './DetectorInfo.vue';
-import type { DetectorItem, OtherResult, MainResults, PollResolve } from '@/assets/types';
-import { formatDetectorPayload } from '@/utils/formatDetectorPayload';
-import { loadZip } from '@/utils/loadZip'
-import { PENDING_MSG, BAD_RESULT_MSG, TEST_RESULT_MSG } from '@/assets/global'
-import { toRaw } from 'vue';
+import Papa from 'papaparse'
 import { ref } from 'vue';
+import DownloadTemplateVue from './DownloadTemplate.vue';
+import DownloadDefaultVue from './DownloadDefault.vue';
+
+// Importing types
+import type { DetectorItem, OtherResult, MainResults, PollResolve } from '@/assets/types';
 import type { Ref } from 'vue';
 
-import Papa from 'papaparse'
+// Importing utilities
+import { formatDetectorPayload } from '@/utils/formatDetectorPayload';
+import { loadZip } from '@/utils/loadZip'
 
+// Importing constants
+import { PENDING_MSG, BAD_RESULT_MSG, TEST_RESULT_MSG } from '@/assets/global'
+
+// Importing Vue specific utilities
+import { toRaw } from 'vue';
+import { useModalStore } from '@/stores/modalStore';
+import TestModal from './TestModal.vue';
+
+// Initializing stores
 const inputStore = useInputStore();
 const resultsStore = useResultsStore()
+const modalStore = useModalStore()
 
+// Creating references to store properties
 const { input } = storeToRefs(inputStore);
 const { pending, errorResult, testResult, results } = storeToRefs(resultsStore);
+const { modalTrigger } = storeToRefs(modalStore);
 
 const form: Ref<HTMLFormElement | null> = ref(null);
 
@@ -105,7 +119,7 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
     const chain = async () => {
       try {
         const response = await fetch(`/api/results/${taskId}/`);
-        // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
+        // const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
         let data;
         data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
         console.log('headers', response.headers.get('Content-Type'))
@@ -205,7 +219,7 @@ const poll = async (taskId: string): Promise<PollResolve> => {
     const chain = async () => {
       try {
         const response = await fetch(`/api/results/${taskId}/`);
-        // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
+        // const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
         let data;
         data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
         console.log('headers', response.headers.get('Content-Type'))
@@ -402,7 +416,7 @@ const handleTest = async (): Promise<void> => {
     try {
       pending.value.status = true;
       const response = await fetch("/api/analyze/", testReqOptions)
-      // const response = await fetch("http://0.0.0.0:8000/analyze/", testReqOptions) // docker route
+      // const response = await fetch("http://0.0.0.0:8000/api/analyze/", testReqOptions) // docker route
       const testData = await response.json()
       console.log('testData', testData)
 
@@ -420,8 +434,13 @@ const handleSubmit = async (): Promise<void> => {
   // validate input
   const valid = await form.value!.validate()
   if (valid.valid) {
-    
-    // reset error state
+    // if (modalTrigger.value.fresh) {
+    //   modalTrigger.value = {
+    //     open: true,
+    //     fresh: false
+    //   }
+    //   return
+    // }
     resultsStore.resetAll()
 
     scrollToResults();
@@ -443,7 +462,7 @@ const handleSubmit = async (): Promise<void> => {
     try {
       pending.value.status = true;
       const response = await fetch("/api/analyze/", requestOptions)
-      // const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions) // docker route
+      // const response = await fetch("http://0.0.0.0:8000/api/analyze/", requestOptions) // docker route
       const data = await response.json()
       console.log(data)
       const result = await poll(data.task_id)

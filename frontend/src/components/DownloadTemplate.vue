@@ -8,7 +8,7 @@
 <script setup lang="ts">
 
 const templateCSV = `text,dataset,label
-"Hello World, this is some example text for AI",gpt-4,ai-generated
+"Greetings, World! This is a sample text designed to demonstrate the capabilities of artificial intelligence.",gpt-4,ai-generated
 "Hello World, this is some example human generated text",human,human-generated`
 
 const downloadTemplate = () => {
@@ -23,5 +23,4 @@ const downloadTemplate = () => {
 
 </script>
 <style lang="">
-  
 </style>

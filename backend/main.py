@@ -5,7 +5,7 @@ import time
 import uuid
 from text_analyzer import text_analyzer_main
 from analyze_output import csv_analyzer_main
-from fastapi import FastAPI, UploadFile, Form, BackgroundTasks
+from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, APIRouter
 from fastapi.responses import FileResponse
 import zipfile 
 import os
@@ -17,21 +17,28 @@ task_status = shared_data.task_status
 
 
 app = FastAPI()
+router = APIRouter(prefix='/api')
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8080", 'http://localhost:5173'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-@app.get("/")
+
+
+@router.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/results/{task_id}")
+@router.get("/download/default_csv")
+async def get_default_csv():
+    return FileResponse("./default_csv.csv", media_type="text/csv", filename="default_csv.csv")
+
+@router.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
     if task_status[task_id]["status"] == "failed" or (task_id not in task_status):
         if os.path.exists(f"./log/{task_id}/error_log_{task_id}.txt"):
@@ -53,7 +60,7 @@ async def get_results(task_id: str, background_tasks: BackgroundTasks):
     else:
         return {"error": "No results found"}
 
-@app.post("/analyze/")
+@router.post("/analyze/")
 async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(...), csvFile: UploadFile = Form(...)):
     try: 
         csv_file_path = await set_csv(csvFile)
