@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import type { Folder, OrderSelect, Pending } from '@/assets/types'
+import type { ErrorResult, Folder, OrderSelect, Pending } from '@/assets/types'
 import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { RATE_LABELS } from '@/assets/global'
@@ -8,8 +8,8 @@ export const useResultsStore = defineStore('resultsStore', () => {
   const results: Ref<Folder[]> = ref([])
 
   const updateResults = (newResults: Folder[]) => {
-    results.value = newResults;
-  } 
+    results.value = newResults
+  }
 
   const orderBy: Ref<OrderSelect> = ref({
     selected: 'F1 score',
@@ -33,18 +33,35 @@ export const useResultsStore = defineStore('resultsStore', () => {
 
   const pending: Ref<Pending> = ref({
     status: false,
-    msg: null,
+    progress: null,
+    msg: null
   })
+
+  const errorResult: Ref<ErrorResult> = ref({
+    status: false,
+    msg: null,
+    blob: null
+  })
+
+  const resetErrorResult = () => {
+    errorResult.value = {
+      status: false,
+      msg: null,
+      blob: null
+    }
+  }
 
   const zipBlob: Ref<Blob | null> = ref(null)
 
   return {
+    errorResult,
     feed,
     orderBy,
     pending,
     results,
     zipBlob,
+    resetErrorResult,
     toggleDirection,
-    updateResults,
+    updateResults
   }
 })
