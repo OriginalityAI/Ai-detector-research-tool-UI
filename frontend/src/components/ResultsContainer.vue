@@ -41,32 +41,36 @@
           <OriginalitySVG />
         </v-col>
       </v-row>
-      <v-row v-if="pending.status" no-gutters justify="center" class="brain">
-        <v-col cols="auto">
-          <v-progress-circular indeterminate color="secondary" :width="14" :size="265"></v-progress-circular>
-        </v-col>
-      </v-row>
-      <v-row v-if="pending.status" no-gutters justify="center" class="pt-8">
-        <v-col cols="auto">
-          <span class="text-h6 font-weight-black">{{ pending.msg }}</span>
-        </v-col>
-      </v-row>
-      <v-row v-if="pending.progress" no-gutters justify="center" class="pt-6">
-        <v-col cols="auto">
-          <span class="text-h6 font-weight-black">{{ `Progress: ${pending.progress}%`}}</span>
-        </v-col>
-      </v-row>
-      <v-row v-if="errorResult.status" no-gutters justify="center" class="pt-6">
-        <v-col cols="auto">
-          <span class="text-h4 font-weight-black">Error</span>
-        </v-col>
-      </v-row>
-      <v-row v-if="errorResult.blob" no-gutters justify="center" class="pt-6">
-        <v-col cols="auto">
-          <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleDownloadLog"><span
-                class="text-h6 font-weight-black pr-2">Download Log</span></v-btn>
-        </v-col>
-      </v-row>
+      <div v-if="pending.status">
+        <v-row no-gutters justify="center" class="brain">
+          <v-col cols="auto">
+            <v-progress-circular indeterminate color="secondary" :width="14" :size="265"></v-progress-circular>
+          </v-col>
+        </v-row>
+        <v-row no-gutters justify="center" class="pt-8">
+          <v-col cols="auto">
+            <span class="text-h6 font-weight-black">{{ pending.msg }}</span>
+          </v-col>
+        </v-row>
+        <v-row v-if="pending.progress" no-gutters justify="center" class="pt-6">
+          <v-col cols="auto">
+            <span class="text-h6 font-weight-black">{{ `Progress: ${pending.progress}%`}}</span>
+          </v-col>
+        </v-row>
+      </div>
+      <div v-else-if="errorResult.status">
+        <v-row no-gutters justify="center" class="pt-6">
+          <v-col cols="auto">
+            <span class="text-h4 font-weight-black">Error</span>
+          </v-col>
+        </v-row>
+        <v-row v-if="errorResult.blob" no-gutters justify="center" class="pt-6">
+          <v-col cols="auto">
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleDownloadLog"><span
+                  class="text-h6 font-weight-black pr-2">Download Log</span></v-btn>
+          </v-col>
+        </v-row>
+      </div>
       <v-row v-else v-for="folder in resultStore.feed" :key="folder.name" no-gutters class="pb-12">
         <DetectorResult :result="folder" />
       </v-row>

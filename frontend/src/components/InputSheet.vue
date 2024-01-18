@@ -273,7 +273,7 @@ const createTestCsv = (file: File): Promise<Blob> => {
 const handleSubmit = async (): Promise<void> => {
   // validate input
   const valid = await form.value!.validate()
-
+  
   if (valid.valid) {
     // reset error state
     resultsStore.resetErrorResult()
