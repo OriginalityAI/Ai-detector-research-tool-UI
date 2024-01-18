@@ -43,21 +43,7 @@ API_ENDPOINTS = {
         },
         "response": {"200": {"score": "score"}},
     },
-    "Writer": {
-        "post_parameters": {
-            "endpoint": "https://enterprise-api.writer.com/content/organization/{writer_organization_id}/detect",
-            "headers": {"Authorization": "", "Content-Type": "application/json"},
-            "body": {"input": "Sample"},
-            "API_KEY_POINTER": {
-                "location": "headers",
-                "value": '',
-                "key_name": "Authorization",
-            },
-            "text_key": "input",
-        },
-        "response": {"200": ["score"]},
-    },
-    "GPTZero": {
+    "GPTZERO": {
         "post_parameters": {
             "endpoint": "https://api.gptzero.me/v2/predict/text",
             "body": {"document": "Sample"},
@@ -90,7 +76,7 @@ API_ENDPOINTS = {
     #         }
     #     },
     # },
-    "Copyleaks": {
+    "COPYLEAKS": {
         "post_parameters": {
             "endpoint": "https://api.copyleaks.com/v2/writer-detector/{copyLeaks_scan_id}/check",
             "headers": {},

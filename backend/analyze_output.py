@@ -48,9 +48,9 @@ class AnalyzeOutput:
             df = df.reset_index(drop=True)
             return df
         except KeyError as e:
-            raise Exception(f"Key error check your column names match the expected input: {e}")
+            raise Exception(f"KKeyError: Missing expected column '{e}'. Please ensure your CSV file includes the necessary columns.")
         except Exception as e:
-            raise Exception(f"An unexpected error occurred: {e}")
+            raise Exception(f"Unexpected error occurred while reading CSV file: {e}. Please check the CSV file for correct formatting and data integrity.")
 
     def _calculate_labels(self, df: pd.DataFrame):
         """
@@ -114,8 +114,8 @@ class AnalyzeOutput:
             elif cm[1].sum() == 0:
                 cm = np.delete(cm, 1, 0)
             return cm
-        except:
-            print("Error deleting rows from the confusion matrix")
+        except Exception as e:
+            print(f"Error deleting rows from the confusion matrix to make it 1x2: {e}")
             return cm
 
     def _get_visual_labels(self, cm, y_true):
@@ -175,8 +175,8 @@ class AnalyzeOutput:
                     index=["AI Generated", "Human Written"],
                 )
             return df_cm, df_labels
-        except:
-            raise Exception("Error calculating labels for the confusion matrix")
+        except Exception as e:
+            raise Exception(f"Error in calculating labels for the confusion matrix: {e}. Ensure the matrix dimensions are correct and data is valid.")
 
     def _visualize_confusion_matrix(self, cm, api_name: str, y_true):
         """
@@ -210,7 +210,7 @@ class AnalyzeOutput:
             return df_cm, df_labels
         except:
             raise Exception(
-                f"Error visualizing the confusion matrix. Check the shape of the matrix. It should be 2x2 or 1x2. Shape: {cm.shape}"
+                f"Failed to visualize confusion matrix due to incorrect dimensions (current shape: {cm.shape}). Matrix must be 2x2 or 1x2."
             )
 
     def generate_stats(self, csv_file: str):
@@ -261,8 +261,8 @@ class AnalyzeOutput:
 
             with open(f"{API}_true_rates.txt", "a") as f:
                 f.write(output_string)
-        except:
-            raise Exception("Error calculating true rates")
+        except Exception as e:
+            raise Exception(f"Failed to calculate performance metrics (precision, recall, F1, etc.). Ensure y_true and y_pred contain valid data: {e}")
 
 
 
@@ -284,11 +284,11 @@ def csv_analyzer_main(csv_file: str, task_id: str):
     ValueError: if the file is empty or not a csv file
     """
     if not os.path.exists(csv_file):
-        raise FileNotFoundError(f"File {csv_file} not found")
+        raise FileNotFoundError(f"FileNotFoundError: The file '{csv_file}' does not exist. Please provide a valid file path.")
     if not csv_file.endswith(".csv"):
-        raise ValueError(f"File {csv_file} is not a csv file")
+        raise ValueError(f"ValueError: The file '{csv_file}' is not a CSV file. Please provide a file with the .csv extension.")
     if os.stat(csv_file).st_size == 0:
-        raise ValueError(f"File {csv_file} is empty")
+        raise ValueError(f"ValueError: The file '{csv_file}' is empty. Please provide a CSV file with data.")
 
     output_analyzer = AnalyzeOutput(csv_file)
     unique_apis = output_analyzer._unique_apis()

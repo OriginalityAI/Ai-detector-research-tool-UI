@@ -3,7 +3,7 @@ import asyncio
 import shutil
 import time
 import uuid
-from text_analyzer import text_analyzer_main, task_status
+from text_analyzer import text_analyzer_main
 from analyze_output import csv_analyzer_main
 from fastapi import FastAPI, UploadFile, Form, BackgroundTasks
 from fastapi.responses import FileResponse
@@ -12,6 +12,8 @@ import os
 import io
 import json
 from fastapi.middleware.cors import CORSMiddleware
+from task_status import shared_data
+task_status = shared_data.task_status
 
 
 app = FastAPI()
@@ -24,7 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-task_status = {}
 
 @app.get("/")
 async def root():
@@ -32,13 +33,14 @@ async def root():
 
 @app.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
-    if task_status[task_id] == "failed" or (task_id not in task_status):
+    if task_status[task_id]["status"] == "failed" or (task_id not in task_status):
         if os.path.exists(f"./log/{task_id}/error_log_{task_id}.txt"):
-            return FileResponse(f"./log/{task_id}", media_type="application/octet-stream", filename=f"error_log_{task_id}.txt")
+            zipped_error_log = zip_files(f"./log/{task_id}", task_id)
+            return FileResponse(zipped_error_log, media_type="application/octet-stream", filename=f"error_log_{task_id}.zip")
         else:
             return {"task_id": task_status[task_id], "error": "No error log found", "message": "No error log found"}
             
-    if (task_status[task_id] == "running"):
+    if (task_status[task_id]["status"] == "running"):
         return {**task_status}
 
     if os.path.exists(f"./output_{task_id}.zip"):
@@ -57,12 +59,13 @@ async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(.
         csv_file_path = await set_csv(csvFile)
     except Exception as e:
         create_failed_folder([], "setting csv", e, task_id, "Check the csv file is properly formatted and exists")
-        task_status[task_id] = "failed"
-        return {"error": f"An error occurred when setting the csv file: {e}"}
+        task_status[task_id] = {"status": "failed"}
+        return {"error": f"Failed to process the uploaded CSV file: {e}. Please ensure the file is correctly formatted and try uploading again."}
     try:
         task_id = str(uuid.uuid4())
         api_keys_dict = json.loads(api_keys)
-        task_status[task_id] = "running"
+        task_status[task_id] = {"status": "running", "progress": 0}
+        print(task_status)
         background_tasks.add_task(process_file, api_keys_dict, csv_file_path, task_id)
 
         return {"message": "Analysis started", "task_id": task_id} 
@@ -82,9 +85,11 @@ async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
             # set the api keys in the .env file
             selected_endpoints = set_env(selected_endpoints)
         except Exception as e:
-            return {"error": f"An error occurred when setting the api keys in the .env file: {e}"}
+            return {"error": f"Error setting API keys in the environment: {e}. Please check the API key format and ensure they are valid."}
         
         # now we have the api keys in the .env file remove the api keys from the selected_endpoints dict
+        if "COPYLEAKS_SCAN_ID" in selected_endpoints:
+            del selected_endpoints["COPYLEAKS_SCAN_ID"]
         selected_endpoints = {key.split('_')[0]: value for key, value in selected_endpoints.items() if value}
 
 
@@ -93,8 +98,8 @@ async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
             output_csv = await asyncio.to_thread(text_analyzer_main, task_id,selected_endpoints=selected_endpoints, input_csv=csv_file_path)
         except Exception as e:
             create_failed_folder([csv_file_path], "text analyzer", e, task_id)
-            task_status[task_id] = "failed"
-            return {"error": f"An error occurred when running the text analyzer: {e}"}
+            task_status[task_id]["status"] = "failed"
+            return {"error": f"Failed to execute text analysis: {e}. Ensure the text analyzer is correctly configured and the input CSV is properly formatted."}
         
 
         try:
@@ -103,8 +108,8 @@ async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
         except Exception as e:
 
             create_failed_folder([csv_file_path, output_csv], "csv analyzer", e, task_id)
-            task_status[task_id] = "failed"
-            return {"error": f"An error occurred when running the csv analyzer: {e}"}
+            task_status[task_id]["status"] = "failed"
+            return {"error": f"Error during CSV analysis: {e}. Check the CSV analyzer's configuration and input data."}
         
 
         try:
@@ -112,15 +117,15 @@ async def process_file(api_keys_dict: dict, csv_file_path: str, task_id: str):
             zip_files(output_folder, task_id)
         except Exception as e:
             create_failed_folder([output_folder,csv_file_path, output_csv], "zipping", e, task_id)
-            task_status[task_id] = "failed"
-            return {"error": f"An error occurred when zipping the output folder: {e}"}
+            task_status[task_id]["status"] = "failed"
+            return {"error": f"Failed to zip output folder: {e}. Ensure the folder exists and has accessible content."}
         
 
-        task_status[task_id] = "complete"
-        cleanup([output_folder, "./.env", csv_file_path, output_csv])
+        task_status[task_id]["status"] = "complete"
+        cleanup([output_folder, "./.env", csv_file_path, output_csv]) 
     except Exception as e:
         create_failed_folder([csv_file_path, output_csv], "failed", e, task_id)
-        task_status[task_id] = "failed"
+        task_status[task_id]["status"] = "failed"
         return {"error": f"An error occurred: {e}"}
     
         
@@ -159,7 +164,7 @@ def create_failed_folder(files: list, location: str, e: Exception, task_id: str,
             shutil.move(file, f"./log/{task_id}")
         f.close()
     except Exception as e:
-        raise Exception(f"An error occurred when creating the failed folder: {e}")
+        raise Exception(f"Error creating log folder for failed task: {e}. Check file system permissions and available storage.")
     
     
 def set_env(selected_endpoints: dict):
@@ -169,7 +174,7 @@ def set_env(selected_endpoints: dict):
                     env_file.write(f"{key}='{value}'\n")
         return selected_endpoints
     except Exception as e:
-        raise Exception(f"An error occurred when setting the api keys in the .env file: {e}")
+        raise Exception(f"AFailed to write API keys to the .env file: {e}. Ensure the file path is correct and writable.")
 
 def cleanup(path:list):
     for file in path:
