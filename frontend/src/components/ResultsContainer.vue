@@ -56,6 +56,17 @@
           <span class="text-h6 font-weight-black">{{ `Progress: ${pending.progress}%`}}</span>
         </v-col>
       </v-row>
+      <v-row v-if="errorResult.status" no-gutters justify="center" class="pt-6">
+        <v-col cols="auto">
+          <span class="text-h4 font-weight-black">Error</span>
+        </v-col>
+      </v-row>
+      <v-row v-if="errorResult.blob" no-gutters justify="center" class="pt-6">
+        <v-col cols="auto">
+          <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleDownloadLog"><span
+                class="text-h6 font-weight-black pr-2">Download Log</span></v-btn>
+        </v-col>
+      </v-row>
       <v-row v-else v-for="folder in resultStore.feed" :key="folder.name" no-gutters class="pb-12">
         <DetectorResult :result="folder" />
       </v-row>
@@ -71,11 +82,26 @@ import { storeToRefs } from 'pinia';
 // import { loadZip } from '@/utils/loadZip'
 
 const resultStore = useResultsStore()
-const { orderBy, zipBlob, pending, results } = storeToRefs(resultStore)
+const { orderBy, zipBlob, pending, results, errorResult } = storeToRefs(resultStore)
 
 const handleDownloadAll = () => {
   if (zipBlob.value) {
     const url = window.URL.createObjectURL(zipBlob.value);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'output.zip';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+  } else {
+    console.error('No file is available for download.');
+  }
+}
+
+const handleDownloadLog = () => {
+  if (errorResult.value.blob) {
+    const url = window.URL.createObjectURL(errorResult.value.blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'output.zip';

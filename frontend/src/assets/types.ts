@@ -58,3 +58,8 @@ export type Pending = {
   progress: string | null
   msg: string | null
 }
+export type ErrorResult = {
+  status: boolean
+  msg: string | null
+  blob: Blob | null
+}

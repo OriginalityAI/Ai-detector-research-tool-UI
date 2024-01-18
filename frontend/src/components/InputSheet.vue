@@ -47,7 +47,8 @@
         </v-row>
         <v-row no gutters justify="center" class="pb-12">
           <v-col cols="auto">
-            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit()"><span class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
+            <v-btn color="primary" size="x-large" rounded="lg" class="text-none" @click="handleSubmit()"><span
+                class="text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
                 icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
           </v-col>
         </v-row>
@@ -70,7 +71,7 @@ import DetectorInfo from './DetectorInfo.vue';
 import type { DetectorItem, UserInput } from '@/assets/types';
 import { formatDetectorPayload } from '@/utils/formatDetectorPayload';
 import { loadZip } from '@/utils/loadZip'
-import { PENDING_MSG } from '@/assets/global'
+import { PENDING_MSG, BAD_RESULT_MSG } from '@/assets/global'
 import { nextTick } from 'vue';
 import { toRaw } from 'vue';
 import { ref } from 'vue';
@@ -80,7 +81,7 @@ const inputStore = useInputStore();
 const resultsStore = useResultsStore()
 
 const { input } = storeToRefs(inputStore);
-const { pending, zipBlob } = storeToRefs(resultsStore);
+const { pending, zipBlob, errorResult } = storeToRefs(resultsStore);
 
 const form: Ref<any> = ref(null);
 
@@ -99,49 +100,70 @@ const handleUpdate = (name: string, updatedItem: DetectorItem) => {
   input.value.detectors[name] = updatedItem
 }
 
-const poll = async (taskId: string) => {
+const testPoll = async (taskId: string): Promise<boolean | undefined> => {
   try {
-    console.log(`poll bang!`)
-    // const response = await fetch(`/api/results/${taskId}/`);
-    const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
+    const response = await fetch(`/api/results/${taskId}/`);
+    // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
     let data;
     data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
     console.log('headers', response.headers.get('Content-Type'))
     console.log('data', data)
-    // running state
     if (data.blob) {
-      console.log(PENDING_MSG.completed);
-      pending.value.msg = PENDING_MSG.completed;
-      pending.value.progress = null
-      zipBlob.value = data.blob
-      const unzipped = await loadZip(data.blob)
-      console.log(unzipped)
-      if (unzipped) {
-        nextTick(() => pending.value.status = false)
-        resultsStore.updateResults(unzipped)
+      response.headers.forEach((value, name) => {
+        console.log(`${name}: ${value}`);
+      });
+      console.log("content disposition", response.headers.keys(), response.headers.values())
+      console.log("content disposition", response.headers.get('Content-Disposition'))
+      let filename = ''
+      if (response.headers.get('Content-Disposition')) {
+        // console.log('regexed', response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/), typeof response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)[1]);
+        filename = response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)![1];
       }
-      // fail state
+      // Success state
+      if (filename.startsWith('output')) {
+        return true
+
+        // Logged error state
+      } else if (filename.startsWith('error_log')) {
+        errorResult.value.msg = BAD_RESULT_MSG.testFailed;
+        errorResult.value.blob = data.blob
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+
+        // Unknown file error state
+      } else {
+        console.error('An unknown error occured on file response.')
+        errorResult.value.msg = BAD_RESULT_MSG.unknown;
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+      }
+
+      // Running state
     } else if (data[taskId].status === 'running') {
-      console.log(PENDING_MSG.running);
-      pending.value.msg = PENDING_MSG.running;
-      pending.value.progress = Number(data[taskId].progress).toFixed(0);
-      setTimeout(() => poll(taskId), 5000);
-      // success state
-    } else if (data.status === 'failed') {
-      console.log(PENDING_MSG.failed);
-      pending.value.msg = PENDING_MSG.failed;
-      nextTick(() => pending.value.status = false)
-      // error state
+      pending.value.msg = PENDING_MSG.testing;
+      setTimeout(() => testPoll(taskId), 5000);
+
+      // Logless error states
     } else if (data.error) {
-      nextTick(() => pending.value.status = false)
-      pending.value.msg = `${data.error}`;
-      console.error(`Error from server: ${data.error}`);
+      if (data.error === 'No error log found') {
+        errorResult.value.msg = BAD_RESULT_MSG.loglessError;
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+      } else if (data.error === 'No results found') {
+        errorResult.value.msg = BAD_RESULT_MSG.noResults;
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+      } else {
+        errorResult.value.msg = BAD_RESULT_MSG.unknown;
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+      }
     }
-    // } else {
-    //   nextTick(() => pending.value.status = false)
-    //   pending.value.msg = `${data.error}`;
-    //   console.error('Unrecognized response status, stopping polling.');
-    // }
   } catch (error) {
     // If there's a network or server error, log the error and retry after 30 seconds
     console.error('An error occurred while polling:', error);
@@ -150,30 +172,143 @@ const poll = async (taskId: string) => {
   }
 }
 
+const poll = async (taskId: string) => {
+  try {
+    const response = await fetch(`/api/results/${taskId}/`);
+    // const response = await fetch(`http://0.0.0.0:8000/results/${taskId}/`); // docker route
+    let data;
+    data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
+    console.log('headers', response.headers.get('Content-Type'))
+    console.log('data', data)
+    // running state
+    if (data.blob) {
+      const filename = response.headers.get('Content-Disposition')!.match(/filename="([^"]+)"/)![0];
+      // Success state
+      if (filename.startsWith('output')) {
+        pending.value.msg = PENDING_MSG.completed;
+        pending.value.progress = null
+        zipBlob.value = data.blob
+        const unzipped = await loadZip(data.blob)
+        if (unzipped) {
+          resultsStore.updateResults(unzipped)
+        }
+        pending.value.status = false
+
+        // Logged error state
+      } else if (filename.startsWith('error_log')) {
+        errorResult.value.msg = BAD_RESULT_MSG.testFailed;
+        errorResult.value.blob = data.blob
+        errorResult.value.status = true;
+        pending.value.status = false;
+
+        // Unknown file error state
+      } else {
+        console.error('An unknown error occured on file response.')
+        errorResult.value.msg = BAD_RESULT_MSG.unknown;
+        errorResult.value.status = true;
+        pending.value.status = false;
+      }
+
+      // Running state
+    } else if (data[taskId].status === 'running') {
+      console.log(PENDING_MSG.running);
+      pending.value.msg = PENDING_MSG.running;
+      pending.value.progress = Number(data[taskId].progress).toFixed(0);
+      setTimeout(() => poll(taskId), 5000);
+
+      // Logless error states
+    } else if (data.error) {
+      if (data.error === 'No error log found') {
+        errorResult.value.msg = BAD_RESULT_MSG.loglessError;
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+      } else if (data.error === 'No results found') {
+        errorResult.value.msg = BAD_RESULT_MSG.noResults;
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+      } else {
+        errorResult.value.msg = BAD_RESULT_MSG.unknown;
+        errorResult.value.status = true;
+        pending.value.status = false;
+        return false
+      }
+    }
+
+  } catch (error) {
+    // If there's a network or server error, log the error and retry after 30 seconds
+    console.error('An error occurred while polling:', error);
+  }
+}
+
+const createTestCsv = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const csvContent = e.target!.result as string;
+      const rows = csvContent!.split('\n').slice(0, 5).join('\n');
+      const blob = new Blob([rows], { type: 'text/csv' });
+      resolve(blob);
+    };
+    reader.onerror = (e) => reject(e);
+    reader.readAsText(file);
+  });
+};
+
 const handleSubmit = async (): Promise<void> => {
+  // validate input
   const valid = await form.value!.validate()
+
   if (valid.valid) {
+    // reset error state
+    resultsStore.resetErrorResult()
+
+    // format input values for payload
     const detectorPayload = formatDetectorPayload(input.value);
     const rawFile = toRaw(input.value.csv![0])
-    const formdata = new FormData();
-    formdata.append("csvFile", rawFile, input.value.csv![0].name);
-    formdata.append("api_keys", JSON.stringify(detectorPayload));
-    const requestOptions: RequestInit = {
+
+    // test a small sample from the input csv to check wellf-formedness, API endpoints, etc.
+    const testCsv = await createTestCsv(rawFile)
+    const testForm = new FormData();
+    testForm.append("csvFile", testCsv, input.value.csv![0].name);
+    testForm.append("api_keys", JSON.stringify(detectorPayload));
+    const testReqOptions: RequestInit = {
       method: 'POST',
-      body: formdata,
+      body: testForm,
       redirect: 'follow'
     };
     try {
-      // const response = await fetch("/api/analyze/", requestOptions)
-      console.log('handle bang!')
-      const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions) // docker route
-      const data = await response.json()
-      console.log(data)
       pending.value.status = true;
-      poll(data.task_id)
+      const response = await fetch("/api/analyze/", testReqOptions)
+      // const response = await fetch("http://0.0.0.0:8000/analyze/", testReqOptions) // docker route
+      const testData = await response.json()
+      console.log('testData', testData)
+
+      // if the test passes proceed to main poll with full input csv
+      if (await testPoll(testData.task_id)) {
+        const formdata = new FormData();
+        formdata.append("csvFile", rawFile, input.value.csv![0].name);
+        formdata.append("api_keys", JSON.stringify(detectorPayload));
+        const requestOptions: RequestInit = {
+          method: 'POST',
+          body: formdata,
+          redirect: 'follow'
+        };
+        try {
+          const response = await fetch("/api/analyze/", requestOptions)
+          // const response = await fetch("http://0.0.0.0:8000/analyze/", requestOptions) // docker route
+          const data = await response.json()
+          console.log(data)
+          poll(data.task_id)
+        } catch (err) {
+          console.error('Error during main fetch', err);
+        }
+      }
     } catch (err) {
-      console.error('Error during fetch', err);
+      console.error('Error during test fetch', err);
     }
+
   }
 }
 
