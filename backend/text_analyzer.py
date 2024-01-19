@@ -164,7 +164,6 @@ class TextAnalyzer:
         try:
             if is_csv:
                 df = pd.read_csv(input_path)
-                    
                 for index, row in df.iterrows():
                     text_type = "Human" if "human" in row["dataset"].lower() else "AI"
                     text = row["text"]
@@ -249,17 +248,15 @@ def set_headers(output_csv: str) -> None:
     None
     """
     try:
-        
         init_row = [
-            "Text Type",
-            "API Name",
-            'id',
-            "dataset",
-            "ai_score",
-            "human_score",
-            "Error_message",
-        ]
-                    
+                    "Text Type",
+                    "API Name",
+                    'id',
+                    "dataset",
+                    "ai_score",
+                    "human_score",
+                    "Error_message",
+                  ]
         with open(output_csv, "a", newline="", encoding="UTF-8") as file:
             writer = csv.writer(file)
             writer.writerow(init_row)
@@ -330,6 +327,7 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
             text_analyzer = TextAnalyzer(output_csv, api, api_name, task_id, copyleaks_scan_id)
             set_headers(output_csv)
             if input_csv != "":
+                set_headers(output_csv)
                 future = (executor.submit(text_analyzer.process_files, input_csv, "", True, selected_endpoints))
                 futures.append(future)
     for future in concurrent.futures.as_completed(futures):

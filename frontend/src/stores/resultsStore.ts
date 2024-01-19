@@ -1,15 +1,14 @@
 import type { Ref } from 'vue'
-import type { ErrorResult, Folder, OrderSelect, Pending } from '@/assets/types'
-import { computed, reactive, ref } from 'vue'
+import type { Folder, MainResults, OrderSelect, Pending, OtherResult } from '@/assets/types'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { RATE_LABELS } from '@/assets/global'
 
 export const useResultsStore = defineStore('resultsStore', () => {
-  const results: Ref<Folder[]> = ref([])
-
-  const updateResults = (newResults: Folder[]) => {
-    results.value = newResults
-  }
+  const results: Ref<MainResults> = ref({
+    folders: [],
+    blob: null
+  })
 
   const orderBy: Ref<OrderSelect> = ref({
     selected: 'F1 score',
@@ -22,7 +21,7 @@ export const useResultsStore = defineStore('resultsStore', () => {
   }
 
   const feed = computed(() =>
-    results.value.sort((resultA: Folder, resultB: Folder) =>
+    results.value.folders.sort((resultA: Folder, resultB: Folder) =>
       orderBy.value.descending
         ? Number(resultB.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]]) -
           Number(resultA.trueRates![orderBy.value.selected as (typeof RATE_LABELS)[number]])
@@ -37,13 +36,27 @@ export const useResultsStore = defineStore('resultsStore', () => {
     msg: null
   })
 
-  const errorResult: Ref<ErrorResult> = ref({
+  const errorResult: Ref<OtherResult> = ref({
     status: false,
     msg: null,
     blob: null
   })
 
-  const resetErrorResult = () => {
+  const resetAll = () => {
+    // Reset main results
+    results.value = {
+      folders: [],
+      blob: null
+    }
+    
+    // Reset test results
+    testResult.value = {
+      status: false,
+      msg: null,
+      blob: null,
+    }
+    
+    // Reset error results
     errorResult.value = {
       status: false,
       msg: null,
@@ -51,7 +64,11 @@ export const useResultsStore = defineStore('resultsStore', () => {
     }
   }
 
-  const zipBlob: Ref<Blob | null> = ref(null)
+  const testResult: Ref<OtherResult> = ref({
+    status: false,
+    msg: null,
+    blob: null,
+  })
 
   return {
     errorResult,
@@ -59,9 +76,8 @@ export const useResultsStore = defineStore('resultsStore', () => {
     orderBy,
     pending,
     results,
-    zipBlob,
-    resetErrorResult,
+    testResult,
+    resetAll,
     toggleDirection,
-    updateResults
   }
 })

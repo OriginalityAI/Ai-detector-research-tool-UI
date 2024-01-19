@@ -5,8 +5,14 @@ import os
 import shutil
 import time
 import uuid
-import zipfile
-from fastapi import BackgroundTasks, FastAPI, Form, UploadFile
+from text_analyzer import text_analyzer_main
+from analyze_output import csv_analyzer_main
+from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, APIRouter
+from fastapi.responses import FileResponse
+import zipfile 
+import os
+import io
+import json
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -21,12 +27,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8080", 'http://localhost:5173'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/")
 async def root():
@@ -41,6 +46,10 @@ async def root():
         A JSON object containing a greeting message.
     """
     return {"message": "Hello World"}
+
+@app.get("/download/default_csv")
+async def get_default_csv():
+    return FileResponse("./default_csv.csv", media_type="text/csv", filename="default_csv.csv")
 
 @app.get("/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):

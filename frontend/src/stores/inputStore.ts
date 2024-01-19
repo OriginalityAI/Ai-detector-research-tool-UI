@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { UserInput } from '@/assets/types'
@@ -27,14 +27,6 @@ export const useInputStore = defineStore('inputStore', () => {
           value: ''
         }
       },
-      Writer: {
-        selected: false,
-        key: '',
-        additionalKey: {
-          name: 'Organization ID',
-          value: ''
-        }
-      }
     }
   })
 

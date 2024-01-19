@@ -44,6 +44,10 @@ export type zFolders = {
   [folderName: string]: Folder
 }
 
+export type MainResults = {
+  folders: Folder[]
+  blob: Blob | null 
+}
 
 export type OrderOptions = typeof RATE_LABELS
 
@@ -58,8 +62,19 @@ export type Pending = {
   progress: string | null
   msg: string | null
 }
-export type ErrorResult = {
+
+export type PollResolve = {
+  kind: string
+  content: MainResults | OtherResult
+}
+
+export type OtherResult = {
   status: boolean
   msg: string | null
   blob: Blob | null
+}
+
+export type ModalTrigger = {
+  open: boolean
+  fresh: boolean
 }

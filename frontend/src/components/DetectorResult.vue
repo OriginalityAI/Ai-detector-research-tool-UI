@@ -14,7 +14,7 @@
     <v-row no-gutters justify="center" class="">
       <v-col cols="auto">
         <v-btn color="primary" size="x-large" rounded="lg" class="text-none"
-          @click="downloadFolder(zipBlob!, result.name)"><span
+          @click="downloadFolder(results.blob!, result.name)"><span
             class="text-h6 font-weight-black pr-2">Download</span><font-awesome-icon class="text-h6"
             icon="fa-solid fa-download"></font-awesome-icon></v-btn>
       </v-col>
@@ -29,7 +29,7 @@ import { useResultsStore } from '@/stores/resultsStore'
 import { storeToRefs } from 'pinia';
 
 const resultStore = useResultsStore()
-const { zipBlob } = storeToRefs(resultStore)
+const { results } = storeToRefs(resultStore)
 
 
 
@@ -39,8 +39,8 @@ const props = defineProps<{
 
 const formattedName = `${props.result.name[0] + props.result.name.slice(1).toLowerCase()}`
 
-async function downloadFolder(zipBlob: Blob, folderName: string) {
-  const zip = await new JSZip().loadAsync(zipBlob)
+async function downloadFolder(resultsBlob: Blob, folderName: string) {
+  const zip = await new JSZip().loadAsync(resultsBlob)
   const newZip = new JSZip();
 
   // Read the provided zip file
