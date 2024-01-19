@@ -55,5 +55,11 @@ export type OrderSelect = {
 
 export type Pending = {
   status: boolean
+  progress: string | null
   msg: string | null
+}
+export type ErrorResult = {
+  status: boolean
+  msg: string | null
+  blob: Blob | null
 }
