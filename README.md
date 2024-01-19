@@ -8,19 +8,18 @@ This tool allows you to test the accuracy of various AI detectors. It is a comma
 
 
 ## Installation
-
 1. Clone this repository or download the zip file.
-2. Navigate to the project directory. In your terminal. e.g `cd user/documents/ai-detector-research-tool`
 
 ## Usage
+1. Navigate to the project directory in your terminal, e.g `cd user/documents/ai-detector-research-tool-UI`
 
-1. Build the Docker images:
+2. Build the Docker images:
 `docker-compose build`
 
-2. Start the Docker containers:
+3. Start the Docker containers:
 `docker-compose up`
 
-3. To close the tool, press `Ctrl+C` and run the following command:
+4. To close the tool, press `Ctrl+C` and run the following command:
 `docker-compose down`
 
 The tool will now be running at `http://localhost:8080`.
