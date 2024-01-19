@@ -117,8 +117,8 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
   return new Promise((resolve) => {
     const chain = async () => {
       try {
-        const response = await fetch(`/api/results/${taskId}/`);
-        // const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
+        // const response = await fetch(`/api/results/${taskId}/`);
+        const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
         let data;
         data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
         if (data.blob) {
@@ -165,7 +165,7 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
             resolve(result);
           }
           // Running state
-        } else if (data[taskId].status === 'running') {
+        } else if (data.status === 'running') {
           pending.value.msg = PENDING_MSG.testing;
           setTimeout(() => resolve(testPoll(taskId)), 5000);
           // Logless error states
@@ -225,8 +225,8 @@ const poll = async (taskId: string): Promise<PollResolve> => {
   return new Promise((resolve) => {
     const chain = async () => {
       try {
-        const response = await fetch(`/api/results/${taskId}/`);
-        // const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
+        // const response = await fetch(`/api/results/${taskId}/`);
+        const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
         let data;
         data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
         if (data.blob) {
@@ -309,9 +309,9 @@ const poll = async (taskId: string): Promise<PollResolve> => {
           }
 
           // Running state
-        } else if (data[taskId].status === 'running') {
+        } else if (data.status === 'running') {
           pending.value.msg = PENDING_MSG.running;
-          pending.value.progress = Number(data[taskId].progress).toFixed(0);
+          pending.value.progress = Number(data.progress).toFixed(0);
           setTimeout(() => resolve(poll(taskId)), 5000);
 
           // Logless error states
@@ -438,8 +438,8 @@ const handleTest = async (): Promise<void> => {
 
     try {
       pending.value.status = true;
-      const response = await fetch("/api/analyze/", testReqOptions)
-      // const response = await fetch("http://0.0.0.0:8000/api/analyze/", testReqOptions) // docker route
+      // const response = await fetch("/api/analyze/", testReqOptions)
+      const response = await fetch("http://0.0.0.0:8000/api/analyze/", testReqOptions) // docker route
       const testData = await response.json()
 
       // If test passes, present results for download, else present appropriate error
@@ -482,8 +482,8 @@ const handleSubmit = async (): Promise<void> => {
 
     try {
       pending.value.status = true;
-      const response = await fetch("/api/analyze/", requestOptions)
-      // const response = await fetch("http://0.0.0.0:8000/api/analyze/", requestOptions) // docker route
+      // const response = await fetch("/api/analyze/", requestOptions)
+      const response = await fetch("http://0.0.0.0:8000/api/analyze/", requestOptions) // docker route
       const data = await response.json()
       const result = await poll(data.task_id)
       result?.kind === "Results" ? results.value = result.content as MainResults : errorResult.value = result.content as OtherResult

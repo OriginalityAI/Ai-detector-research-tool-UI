@@ -47,11 +47,11 @@ async def root():
     """
     return {"message": "Hello World"}
 
-@app.get("/download/default_csv")
+@app.get("/api/download/default_csv")
 async def get_default_csv():
     return FileResponse("./default_csv.csv", media_type="text/csv", filename="default_csv.csv")
 
-@app.get("/results/{task_id}")
+@app.get("/api/results/{task_id}")
 async def get_results(task_id: str, background_tasks: BackgroundTasks):
     """
     This function retrieves the results of a task given its ID. If the task has failed, it returns the error log.
@@ -93,7 +93,7 @@ async def get_results(task_id: str, background_tasks: BackgroundTasks):
     else:
         return {"error": "No results found"}
 
-@app.post("/analyze_text")
+@app.post("/api/analyze/")
 async def analyze_text(background_tasks: BackgroundTasks, api_keys: str = Form(...), csvFile: UploadFile = Form(...)):
     """
     This function initiates the text analysis process. It first sets the CSV file to be used for the analysis,
