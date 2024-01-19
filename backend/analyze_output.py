@@ -66,7 +66,7 @@ class AnalyzeOutput:
         y_pred: the predicted labels
         """
         y_true = [1 if "ai" in tt.lower() else 0 for tt in df["Text Type"]]
-        y_pred = [1 if float(score) > self.THRESHOLD else 0 for score in df["ai_score"]]
+        y_pred = [1 if float(score) > self.THRESHOLD else 0 for score in df["ai_score"]] # add or score == False for WINSTON
 
         return y_true, y_pred
 

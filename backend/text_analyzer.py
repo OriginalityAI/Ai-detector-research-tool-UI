@@ -164,19 +164,7 @@ class TextAnalyzer:
         try:
             if is_csv:
                 df = pd.read_csv(input_path)
-                with open(output_csv, "a", newline="", encoding="UTF-8") as file:
-                    writer = csv.writer(file)
-                    writer.writerow(
-                        [
-                            "Text Type",
-                            "API Name",
-                            'id',
-                            "dataset",
-                            "ai_score",
-                            "human_score",
-                            "Error_message",
-                        ]
-                    )
+                    
                 for index, row in df.iterrows():
                     text_type = "Human" if "human" in row["dataset"].lower() else "AI"
                     text = row["text"]
@@ -248,7 +236,7 @@ class TextAnalyzer:
         return dictionary
 
 
-def set_headers(output_csv: str, file_type: str) -> None:
+def set_headers(output_csv: str) -> None:
     """
     Set the initial headers for the CSV file
 
@@ -261,26 +249,17 @@ def set_headers(output_csv: str, file_type: str) -> None:
     None
     """
     try:
-        if file_type == "csv":
-            init_row = [
-                "Text Type",
-                "API Name",
-                "File Name",
-                "Dataset",
-                "ai_score",
-                "human_score",
-                "Error_message",
-            ]
-        else:
-            init_row = [
-                "Text Type",
-                "API Name",
-                "File Name",
-                "ai_score",
-                "human_score",
-                "Error_message",
-            ]
-
+        
+        init_row = [
+            "Text Type",
+            "API Name",
+            'id',
+            "dataset",
+            "ai_score",
+            "human_score",
+            "Error_message",
+        ]
+                    
         with open(output_csv, "a", newline="", encoding="UTF-8") as file:
             writer = csv.writer(file)
             writer.writerow(init_row)
@@ -323,34 +302,7 @@ class HandleInput:
             api_settings[api_name] = api_info
         return api_settings
 
-    def handle_csv(self, input_csv, output_csv=None):
-        """Handle CSV input and output.
-
-        Validates output CSV path and sets appropriate headers
-        based on input CSV.
-
-        Parameters
-        ----------
-            input_csv: Path to input CSV file
-
-        Returns
-        -------
-            output_csv: Path to validated output CSV
-        """
-        if output_csv is None:
-            print("Invalid output CSV file path")
-            exit(1)
-        if output_csv.endswith(".csv"):
-            if input_csv.endswith(".csv"):
-                set_headers(output_csv, "csv")
-            else:
-                set_headers(output_csv, "txt")
-
-        return output_csv, input_csv
-
    
-
-
 def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = "") -> str:
     """
     main function that runs the text analyzer
@@ -376,6 +328,7 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
         futures = []
         for api_name, api in api_settings.items():
             text_analyzer = TextAnalyzer(output_csv, api, api_name, task_id, copyleaks_scan_id)
+            set_headers(output_csv)
             if input_csv != "":
                 future = (executor.submit(text_analyzer.process_files, input_csv, "", True, selected_endpoints))
                 futures.append(future)
