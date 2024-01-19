@@ -10,10 +10,14 @@
             <v-divider thickness="2" class="ml-4 mr-2"></v-divider>
           </v-col>
         </v-row>
-        <v-row no-gutters class="px-12 pb-6">
+        <v-row no-gutters class="px-12 pb-6" align="center">
           <v-file-input v-model="input.csv" :rules="fileInputRules" class="flex align-start" prepend-icon=""
             append-inner-icon="mdi-paperclip" hide-details="auto" rounded="lg" variant="solo" bg-color="#d4d4d4"
             accept=".csv"></v-file-input>
+          <v-col cols="auto" class="pl-6">
+            <v-btn color="secondary" rounded="large" class="text-none cool-btn-dark" @click="handleTest()"><span
+                class="text-body-1 font-weight-black" @click="handleTest">Test</span></v-btn>
+          </v-col>
         </v-row>
         <v-row no-gutters justify="space-evenly" class="px-4 pb-6">
           <v-col cols="auto">
@@ -38,17 +42,11 @@
             <v-divider thickness="2" class="ml-4 mr-2"></v-divider>
           </v-col>
         </v-row>
-        <v-row no-gutters justify="center">
-          <v-col cols="auto">
-            <v-btn color="secondary" icon class="text-none cool-btn-dark" @click="handleTest()"><span
-                class="text-body-1 font-weight-black" @click="handleTest">Test</span></v-btn>
-          </v-col>
-        </v-row>
         <v-row no gutters justify="center" class="pb-12" align="center">
           <v-col cols="auto">
-            <v-btn color="primary" size="x-large" rounded="lg" class="cool-btn-light text-none" @click="handleSubmit()"><span
-                class=" text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon class="text-h6"
-                icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
+            <v-btn color="primary" size="x-large" rounded="lg" class="cool-btn-light text-none"
+              @click="handleSubmit()"><span class=" text-h6 font-weight-black pr-2">Evaluate</span><font-awesome-icon
+                class="text-h6" icon="fa-solid fa-wand-magic-sparkles"></font-awesome-icon></v-btn>
           </v-col>
         </v-row>
         <TestModal @start-test="handleModalEmit()" />
@@ -123,13 +121,12 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
         // const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
         let data;
         data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
-        console.log('headers', response.headers.get('Content-Type'))
-        console.log('data', data)
         if (data.blob) {
           let filename = ''
           if (response.headers.get('Content-Disposition')) {
             filename = response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)![1];
           }
+          // Success state
           if (filename.startsWith('output')) {
             const result = {
               kind: 'Test',
@@ -141,6 +138,7 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
             }
             pending.value.status = false;
             resolve(result);
+            // Error with log 
           } else if (filename.startsWith('error_log')) {
             const result = {
               kind: 'Error',
@@ -152,6 +150,7 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
             }
             pending.value.status = false;
             resolve(result);
+            // Uncaught file response error
           } else {
             console.error('An unknown error occured on file response.')
             const result = {
@@ -165,9 +164,11 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
             pending.value.status = false;
             resolve(result);
           }
+          // Running state
         } else if (data[taskId].status === 'running') {
           pending.value.msg = PENDING_MSG.testing;
           setTimeout(() => resolve(testPoll(taskId)), 5000);
+          // Logless error states
         } else if (data.error) {
           if (data.error === 'No error log found') {
             console.error('An unknown error occured but no error log was found.')
@@ -208,6 +209,11 @@ const testPoll = async (taskId: string): Promise<PollResolve> => {
           resolve(result);
         }
       } catch (error) {
+        pending.value = {
+          status: false,
+          progress: null,
+          msg: null
+        }
         console.error('An error occurred while polling:', error);
       }
     };
@@ -223,28 +229,42 @@ const poll = async (taskId: string): Promise<PollResolve> => {
         // const response = await fetch(`http://0.0.0.0:8000/api/results/${taskId}/`); // docker route
         let data;
         data = response.headers.get('Content-Type')?.endsWith('octet-stream') ? { blob: await response.blob() } : await response.json();
-        console.log('headers', response.headers.get('Content-Type'))
-        console.log('data', data)
         if (data.blob) {
           let filename = ''
           if (response.headers.get('Content-Disposition')) {
             filename = response.headers.get('Content-Disposition')!.match(/filename=([^;]+)/)![1];
           }
-          // Success state
+          // output file received
           if (filename.startsWith('output')) {
             pending.value.msg = PENDING_MSG.completed;
             const folders = await loadZip(data.blob)
             if (folders) {
-              const result = {
-                kind: 'Results',
-                content: {
-                  folders,
-                  blob: data.blob
+              // Success state
+              if (folders.length) {
+                const result = {
+                  kind: 'Results',
+                  content: {
+                    folders,
+                    blob: data.blob
+                  }
                 }
+                pending.value.status = false
+                pending.value.progress = null
+                resolve(result)
+                // empty folders indicates bad api keys
+              } else {
+                const result = {
+                  kind: 'Error',
+                  content: {
+                    status: true,
+                    msg: BAD_RESULT_MSG.badKeys,
+                    blob: null
+                  }
+                }
+                pending.value.status = false
+                pending.value.progress = null
+                resolve(result)
               }
-              pending.value.status = false
-              pending.value.progress = null
-              resolve(result)
             } else {
               const result = {
                 kind: 'Error',
@@ -290,7 +310,6 @@ const poll = async (taskId: string): Promise<PollResolve> => {
 
           // Running state
         } else if (data[taskId].status === 'running') {
-          console.log(PENDING_MSG.running);
           pending.value.msg = PENDING_MSG.running;
           pending.value.progress = Number(data[taskId].progress).toFixed(0);
           setTimeout(() => resolve(poll(taskId)), 5000);
@@ -337,7 +356,11 @@ const poll = async (taskId: string): Promise<PollResolve> => {
         }
 
       } catch (error) {
-        // If there's a network or server error, log the error and retry after 30 seconds
+        pending.value = {
+          status: false,
+          progress: null,
+          msg: null
+        }
         console.error('An error occurred while polling:', error);
       }
     }
@@ -384,14 +407,13 @@ const scrollToResults = () => {
   }
 }
 
-// Call this function with the ID of the element you want to scroll to
-
 const handleTest = async (): Promise<void> => {
 
   // validate input
   const valid = await form.value!.validate()
 
   if (valid.valid) {
+    modalTrigger.value.fresh = false;
     // reset error state
     resultsStore.resetAll()
 
@@ -419,11 +441,9 @@ const handleTest = async (): Promise<void> => {
       const response = await fetch("/api/analyze/", testReqOptions)
       // const response = await fetch("http://0.0.0.0:8000/api/analyze/", testReqOptions) // docker route
       const testData = await response.json()
-      console.log('testData', testData)
 
       // If test passes, present results for download, else present appropriate error
       const result = await testPoll(testData.task_id);
-      console.log(result)
       result?.kind === 'Test' ? testResult.value = result.content as OtherResult : errorResult.value = result.content as OtherResult
     } catch (err) {
       console.error('Error during test fetch', err);
@@ -465,9 +485,7 @@ const handleSubmit = async (): Promise<void> => {
       const response = await fetch("/api/analyze/", requestOptions)
       // const response = await fetch("http://0.0.0.0:8000/api/analyze/", requestOptions) // docker route
       const data = await response.json()
-      console.log(data)
       const result = await poll(data.task_id)
-      console.log(result)
       result?.kind === "Results" ? results.value = result.content as MainResults : errorResult.value = result.content as OtherResult
     } catch (err) {
       console.error('Error during main fetch', err);
@@ -476,5 +494,4 @@ const handleSubmit = async (): Promise<void> => {
 }
 
 </script>
-<style>
-</style>
+<style></style>

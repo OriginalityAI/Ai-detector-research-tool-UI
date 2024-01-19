@@ -46,7 +46,7 @@
 
 .cool-btn-light {
   transition: 0.5s;
-  background-image: linear-gradient(to bottom right, #7859FF 0%, #7859FF 50%, #5A4D8E 100%);
+  background-image: linear-gradient(to bottom right, #7859FF 0%, #7859FF 50%, #b6a1fe 100%);
   background-size: 200% auto;
   color: white;
 }

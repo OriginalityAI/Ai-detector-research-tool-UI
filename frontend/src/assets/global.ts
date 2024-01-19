@@ -21,7 +21,8 @@ export const BAD_RESULT_MSG = {
   loglessError: 'Your analysis has failed due to an error, though no error log was found',
   noResults: 'No results found',
   unknown: 'An unknown error occured',
-  zipFailure: 'There was a problem unzipping your file.'
+  zipFailure: 'There was a problem unzipping your file.',
+  badKeys: 'Your keys are not valid, no results were returned.'
 }
 
 export const TEST_RESULT_MSG = {

@@ -1,10 +1,5 @@
 <template>
   <v-container id="results-container" class="px-0 pb-12">
-    <!-- <v-row no-gutters justify="center" class="pb-12">
-      <v-col cols="auto">
-        <v-btn class="text-black" size="x-large" @click="handleUnzip">Unzip</v-btn>
-      </v-col>
-    </v-row> -->
     <v-sheet color="#f5f5f5" class="results-sheet sheet d-flex-col">
       <v-row no-gutters align="center" justify="space-between" class="px-8 py-6">
         <v-col cols="auto" class="d-flex align-center">
@@ -140,13 +135,6 @@ const handleDownloadZip = (blob: Blob) => {
     console.error('No file is available for download.');
   }
 }
-
-// const handleUnzip = async () => {
-//   const unzipped = await loadZip()
-//   if (unzipped) {
-//     resultStore.updateResults(unzipped)
-//   }
-// }
 
 </script>
 <style>

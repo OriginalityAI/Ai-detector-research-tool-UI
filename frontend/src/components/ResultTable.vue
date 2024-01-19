@@ -16,7 +16,6 @@
 </template>
 <script setup lang="ts">
 import type { TrueRates } from '@/assets/types'
-import {onMounted} from 'vue';
 
 const props = defineProps<{
   trueRates: TrueRates
@@ -24,7 +23,6 @@ const props = defineProps<{
 
 const ratesArr = Object.entries(props.trueRates).map(([label, score]) => ({label, score}))
 
-onMounted(() => console.log(props.trueRates))
 </script>
 <style>
 .rates-table th {

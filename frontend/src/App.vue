@@ -2,12 +2,12 @@
   <main>
     <v-container justify-center class="content-container">
       <v-row no-gutters justify="center" align="center" class="pt-4 pb-4">
-          <img class="brand" src="/pt-logo-small.png" />
+        <img class="brand" src="/pt-logo-small.png" />
       </v-row>
       <v-row no-gutters justify="center" class="pb-16">
-          <span class="text-h3 text-center font-weight-black">
-            AI Detector<br>Efficacy Research Tool
-          </span>
+        <span class="text-h3 text-center font-weight-black">
+          AI Detector<br>Efficacy Research Tool
+        </span>
       </v-row>
       <v-row no-gutters class="pb-16 px-16">
         <div class="glass sheet">
@@ -15,13 +15,13 @@
           <p class="text-h6 font-weight-medium pb-6 pl-6 pr-6">
             The tool takes a set of text files and runs them through a number of
             AI detectors. It then outputs the results to a CSV file. The tool also
-            generates a confusion matrix to show the accuracy of the detectors. 
-            
+            generates a confusion matrix to show the accuracy of the detectors.
+
             But what is a confusion matrix? A confusion matrix is a table that is
             used to describe the performance of a classification model. It shows
             the number of correct and incorrect predictions made by the
-            classification model compared to the actual outcomes. 
-            
+            classification model compared to the actual outcomes.
+
             This table is
             extremely useful for comparing the performance of different detectors
             as it will show the true positives, false positives, true negatives
@@ -32,6 +32,36 @@
       </v-row>
       <InputSheet />
       <ResultsContainer />
+      <v-row no-gutters class="pt-6 pb-16">
+        <div class="glass sheet">
+          <p class="text-h4 font-weight-bold pt-6 pl-6 pr-6 pb-4">How do I read a confusion matrix?</p>
+          <p class="text-h6 font-weight-medium pb-8 pl-6 pr-6">
+            A confusion matrix is a table that describes the performance of a detector on a particular set of text
+            samples.
+            The upper left cell of the table shows the true positive rate for that detector, meaning how often it was able
+            to accurately identify AI written text as AI written.
+            The lower right cell of the table shows the true negative rate of the model, meaning how often it was able to
+            accurately identify human written text as human written.
+            <span class="text-highlight">For these true rates, a higher percentage is better.</span>
+            <br>
+            <br>
+            The lower left cell of the table shows the false positive rate, meaning how often that detector mistakenly
+            identified human writing as written by AI.
+            The upper right cell of the table shows the false negative rate, meaning how often that detector mistakenly
+            identified AI writing as written by a human.
+            <span class="text-highlight">For these false rates, a lower percentage is better.</span>
+          </p>
+          <v-row no-gutters justify="center">
+            <v-col cols="auto">
+              <img class="matrix-example" src="/confusion_matrix_example.jpg">
+            </v-col>
+          </v-row>
+          <p class="text-h6 font-weight-medium pt-6 pb-6 pl-6 pr-6">
+            If you want to learn more about confusion matrices, techniques for evaluating AI detectors, and results from
+            our own research at Originality.ai, <a class="text-highlight" href="https://originality.ai/blog/ai-content-detection-accuracy">check out our blog post</a>.
+          </p>
+        </div>
+      </v-row>
     </v-container>
   </main>
 </template>
@@ -76,6 +106,15 @@ main {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+.matrix-example {
+  max-width: 926px;
+  max-height: 629px;
+}
+
+.text-highlight {
+  color: var(--bright-orange)
+}
+
 :root {
   --light-blue-text: #474c6e;
   --dark: black;
@@ -96,7 +135,6 @@ main {
 
 @media only screen and (min-width: 1200px) {
   .content-container {
-  width: 1248px;
-}
-}
-</style>
+    width: 1248px;
+  }
+}</style>
