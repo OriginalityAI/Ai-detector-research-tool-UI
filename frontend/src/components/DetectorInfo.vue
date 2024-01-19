@@ -6,11 +6,13 @@
     </v-col>
     <v-col cols="12" md="6" class="flex-grow-1 pr-6">
       <v-text-field :rules="item.selected ? detectorKeyRules : []" :disabled="!item.selected" v-model="localItem.key" @input="emitUpdate" rounded="lg" variant="outlined"
-        prepend-inner-icon="mdi-key" clearable type="password" hide-details="auto" label="Key"></v-text-field>
+        prepend-inner-icon="mdi-key" clearable :type="showKey ? 'text' : 'password'" :append-icon="showKey ? 'mdi-eye' : 'mdi-eye-off'"
+          @click:append="showKey = !showKey" hide-details="auto" label="Key"></v-text-field>
     </v-col>
     <v-col cols="12" md="auto" class="flex-grow-1">
       <v-text-field :rules="item.selected ? detectorIdRules : []" :disabled="!item.selected" v-model="localItem.additionalKey!.value" @input="emitUpdate" rounded="lg" variant="outlined"
-        prepend-inner-icon="mdi-key" label="ID" clearable type="password" hide-details="auto"></v-text-field>
+        prepend-inner-icon="mdi-key" label="ID" clearable :type="showAdditionalKey ? 'text' : 'password'" :append-icon="showAdditionalKey ? 'mdi-eye' : 'mdi-eye-off'"
+          @click:append="showAdditionalKey = !showAdditionalKey" hide-details="auto"></v-text-field>
     </v-col>
   </v-row>
   <v-row v-else no-gutters align="start" class="px-16 pb-4">
@@ -20,7 +22,8 @@
     </v-col>
     <v-col cols="12" md="auto" class="flex-grow-1">
       <v-text-field :rules="item.selected ? detectorKeyRules : []" :disabled="!item.selected" v-model="localItem.key" @input="emitUpdate" rounded="lg" variant="outlined"
-        prepend-inner-icon="mdi-key" label="Key" clearable type="password" hide-details="auto"></v-text-field>
+        prepend-inner-icon="mdi-key" label="Key" clearable :type="showKey ? 'text' : 'password'" :append-icon="showKey ? 'mdi-eye' : 'mdi-eye-off'"
+          @click:append="showKey = !showKey" hide-details="auto"></v-text-field>
     </v-col>
   </v-row>
 </template>
@@ -30,6 +33,9 @@ import type { DetectorItem } from '@/assets/types';
 import { watch } from 'vue';
 import { ref } from 'vue';
 
+
+const showKey = ref(false)
+const showAdditionalKey = ref(false)
 
 const props = defineProps<{
   item: DetectorItem
