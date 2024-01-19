@@ -299,34 +299,7 @@ class HandleInput:
             api_settings[api_name] = api_info
         return api_settings
 
-    def handle_csv(self, input_csv, output_csv=None):
-        """Handle CSV input and output.
-
-        Validates output CSV path and sets appropriate headers
-        based on input CSV.
-
-        Parameters
-        ----------
-            input_csv: Path to input CSV file
-
-        Returns
-        -------
-            output_csv: Path to validated output CSV
-        """
-        if output_csv is None:
-            print("Invalid output CSV file path")
-            exit(1)
-        if output_csv.endswith(".csv"):
-            if input_csv.endswith(".csv"):
-                set_headers(output_csv, "csv")
-            else:
-                set_headers(output_csv, "txt")
-
-        return output_csv, input_csv
-
    
-
-
 def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = "") -> str:
     """
     main function that runs the text analyzer
@@ -352,6 +325,7 @@ def text_analyzer_main(task_id: str, selected_endpoints: list, input_csv: str = 
         futures = []
         for api_name, api in api_settings.items():
             text_analyzer = TextAnalyzer(output_csv, api, api_name, task_id, copyleaks_scan_id)
+            set_headers(output_csv)
             if input_csv != "":
                 set_headers(output_csv)
                 future = (executor.submit(text_analyzer.process_files, input_csv, "", True, selected_endpoints))

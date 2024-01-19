@@ -89,6 +89,20 @@ API_ENDPOINTS = {
             "text_key": "text",
         },
         "response": {"200": {"summary": {"ai": "ai"}}},
-    }
+    },
+    "WINSTON": {
+        "post_parameters": {
+            "endpoint": "https://api.gowinston.ai/functions/v1/predict",
+            "body": {"language": "en", "text": "Sample", "version": "latest"},
+            "headers": {"Authorization": "Bearer " + ''},
+            "API_KEY_POINTER": {
+                "location": "headers",
+                "value": '',
+                "key_name": "Authorization",
+            },
+        },
+        "response": {"200": {"score": "score"}},
+    },
+    
     # Add more endpoints as needed
 }
