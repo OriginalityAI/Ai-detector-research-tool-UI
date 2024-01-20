@@ -1,62 +1,36 @@
-# AI detector research tool
-
-## Overview
+# AI Detector Research Tool
 
 This tool allows you to test the accuracy of various AI detectors. It is a command line tool designed to make it easy to test a large number of detectors at the same time using the same data.
 
-## Description
-
-The tool takes a set of text files and runs them through a number of AI detectors. It then outputs the results to a CSV file. The tool also generates a confusion matrix to show the accuracy of the detectors. But what is a confusion matrix? A confusion matrix is a table that is used to describe the performance of a classification model. It shows the number of correct and incorrect predictions made by the classification model compared to the actual outcomes. This table is extremely useful for comparing the performance of different detectors as it will show the true positives, false positives, true negatives and false negatives for each detector. This allows you to see which detectors are the most accurate.
-
 ## Requirements
 
-- Python 3.9 or higher
-- API keys for the detectors you want to test
+- Docker - [Installation instructions](https://docs.docker.com/get-docker/)
 
 ## Installation
 
-1. Clone this repository or download the zip file
-2. Install the requirements using `pip install -r requirements.txt`
+1. Clone this repository or download the zip file. - `git clone https://github.com/OriginalityAI/Ai-detector-research-tool-Vue.git`
+2. Navigate to the project directory. In your terminal. e.g `cd user/documents/ai-detector-research-tool`
 
-## Usage
+## Usage - Docker (Recommended)
 
-1. Make a note of your API keys for the detectors you want to test
-2. Run the tool using `python main.py`
-3. Follow the instructions in the tool adding your API keys when prompted
-4. The tool will run the detectors and output the results to a CSV file
+1. Build the Docker images:
+`docker-compose build`
 
-Sample workflow:
+2. Start the Docker containers:
+`docker-compose up`
 
-```bash
-python main.py
-Type Y/N to select Originality.ai API: y
-Enter your Originality.ai API key: YOUR_API_KEY
-Enter the directory path for AI text files: data/ai/
-Enter the directory path for human text files: data/human/
-Enter the input CSV file path: data/input.csv
-Enter the output CSV file name: output.csv
+The tool will now be running at `http://localhost:8080`.
 
-Tool will process the data. This may take a while.
-Would you like to generate a confusion matrix? (y/n): y
-Press enter to exit...
-```
+### Closing the tool
 
-## Usage notes
+- To close the tool, press `Ctrl+C` and run the following command:
+`docker-compose down`
 
-- The tool will only run the detectors you have API keys for
-- If when the tool is finished you are not prompted to generate a confusion matrix or the generation fails run `python matrix.py` to generate the confusion matrix
+## API Endpoints
 
-## Input Data Format
-
-The tool expects data to be in .txt files in a folder which is passed to the tool when it is run.
-Or if you are trying to process a csv file it expects the columns to be in the following order:
-
-```csv
-text,dataset,label
-sample text,gpt-3,ai
-```
-
-The dataset column can simply be 'ai' or 'human' this column is used to name the rows on the output
+- `GET /`: Returns a greeting message. - for testing purposes
+- `GET /results/{task_id}`: Fetches the results of a previously submitted task.
+- `POST /analyze`: Submits a new task for analysis.
 
 ## Adding detectors
 
@@ -65,9 +39,10 @@ To add a detector you need to do the following:
 1. Find the detectors API documentation
 2. Find the endpoint for the detector
 3. Find the parameters required for the endpoint
-4. Add the detector to the `detectors.py` file in the following format:
+4. Add the detector to the `api_endpoints.py` file in the following format:
 
-```"YOUR_DETECTOR_NAME": {
+```python
+"YOUR_DETECTOR_NAME": {
     "post_parameters": {
         # The endpoint URL for the API.
         "endpoint": "YOUR_API_ENDPOINT_URL",
@@ -87,7 +62,7 @@ To add a detector you need to do the following:
             "location": "headers_or_body",
 
             # The actual API key. This is usually read from an environment variable or input by the user.
-            "value": "YOUR_API_KEY",
+            "value": "LEAVE_BLANK",
 
             # The name of the key or field where the API key is included. e.g 'x-api-key' or 'api_key'.
             "key_name": "API_KEY_HEADER_OR_PARAMETER_NAME",
@@ -120,73 +95,49 @@ To add a detector you need to do the following:
 - Originality.ai [DOCS](https://docs.originality.ai/) - to specify a particular version please check the docs and add it to the appropriate place in the `api_endpoints.py` file
 - Sapling.ai [DOCS](https://sapling.ai/docs/api/detector)
 - GPTZero [DOCS](https://gptzero.stoplight.io/docs/gptzero-api/d2144a785776b-ai-detection-on-single-string) - to specify a particular version please check the docs and add it to the appropriate place in the `api_endpoints.py` file
-- Writer.com [DOCS](https://dev.writer.com/reference/contentdetectorapi)
 - Copyleaks [DOCS](https://api.copyleaks.com/documentation/v3) - Please follow Copyleaks instructions for setting up the API key as it is a bit more complicated than the other detectors
+- Winston [DOCS](https://docs.gowinston.ai/api-reference/introduction)
 
-## Contributing
+## Error Handling
 
-We welcome contributions to this project! Here are some ways you can help:
-
-### Reporting Bugs
-
-If you find a bug, please report it by opening a GitHub issue. Be sure to include:
-
-- Steps to reproduce the bug
-- Expected behavior
-- Actual behavior
-
-This information will help us diagnose and fix the bug faster.
-
-### Suggesting Enhancements
-
-We're always looking for ways to improve the tool! If you have an idea for an enhancement, open a GitHub issue and describe:
-
-- The current behavior
-- Your proposed change and why it would be useful
-- An example use case
-
-### Pull Requests
-
-If you want to directly contribute code:
-
-1. Fork the repo
-2. Clone your fork
-3. Make changes on a branch
-4. Write clear, concise commit message
-5. Open a pull request against main
-
-Ensure your PR adheres to the following:
-
-- Code is clean and well-formatted
-- Documentation is updated if needed
-- Commit messages are clear and detailed
-
-### Sharing Your Experience
-
-We want to hear about your experience using the tool - good and bad. Let us know what worked and what didn't. Share stories of how this tool has helped your research. The more we hear from you, the better we can make the tool for everyone!
-
-Thanks for contributing!
+The tool has robust error handling. If an error occurs during the processing of a file, the tool creates a folder, writes an error log, and moves the file to the folder. The error log can be retrieved using the `/results/{task_id}` endpoint.
 
 ## License
 
-MIT License
+This project is licensed under the MIT License. For more details, refer to the `LICENSE` file in the project root directory.
 
-Copyright (c) [2023] [Originality.AI]
+## Contributing
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+We welcome contributions! Please submit a pull request or open an issue to make improvements or fix bugs.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## **Alternative Setup Method (Not Recommended)**
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+## Prerequisites
+
+- Python 3.8 or higher
+- Node.js 14.15.4 or higher
+- npm 6.14.10 or higher
+
+## Setup Procedure
+
+1. Clone this repository or download the zip file. - `git clone https://github.com/OriginalityAI/Ai-detector-research-tool-Vue.git`
+2. Navigate to the project directory. In your terminal. e.g `cd user/documents/Ai-detector-research-tool-Vue`
+3. Navigate to the `backend` directory. - `cd backend`
+4. Install the Python dependencies. - `pip install -r requirements.txt`
+5. Navigate to the `frontend` directory. - `cd frontend`
+6. Install the Node.js dependencies. - `npm install`
+7. Build the frontend. - `npm run build`
+
+## How to Use
+
+1. Navigate to the `backend` directory. - `cd backend`
+2. Start the backend server. - `python main.py`
+3. Navigate to the `frontend` directory. - `cd frontend`
+4. Start the frontend server. - `npm run serve`
+
+The tool will now be running at `http://localhost:8080`
+
+### Shutting Down the Tool
+
+- To close the tool, press `Ctrl+C` in the terminal where the backend is running.
+- Press `Ctrl+C` in the terminal where the frontend is running.
