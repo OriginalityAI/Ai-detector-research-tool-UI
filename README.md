@@ -108,6 +108,3 @@ This project is licensed under the MIT License. For more details, refer to the `
 
 We welcome contributions! Please submit a pull request or open an issue to make improvements or fix bugs.
 
-## Contact
-
-If you have any questions or feedback, please reach out to us. We'd love to hear from you!
