@@ -1,6 +1,6 @@
 # AI Detector Research Tool
 
-This tool allows you to test the accuracy of various AI detectors. It is a command line tool designed to make it easy to test a large number of detectors at the same time using the same data.
+This tool allows you to test the accuracy of various AI detectors. It is a tool designed to make it easy to test a large number of detectors at the same time using the same data. - It is a GUI version of the [AI-detector-research-tool](https://github.com/OriginalityAI/AI-detector-research-tool)
 
 ## Requirements
 
