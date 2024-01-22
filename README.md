@@ -19,7 +19,7 @@ This tool allows you to test the accuracy of various AI detectors. It is a comma
 3. Start the Docker containers:
 `docker-compose up`
 
-4. To close the tool, press `Ctrl+C` and run the following command:
+4. To close the tool, press `Ctrl+C` in the terminal window running the Docker container and then run the following command:
 `docker-compose down`
 
 The tool will now be running at `http://localhost:8080`.
