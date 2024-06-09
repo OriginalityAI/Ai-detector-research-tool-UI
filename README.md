@@ -6,23 +6,26 @@ This tool allows you to test the accuracy of various AI detectors. It is a tool 
 
 - Docker - [Installation instructions](https://docs.docker.com/get-docker/)
 
-
 ## Installation
+
 1. Clone this repository or download the zip file.
 
 ## Usage
+
+### [Video tutorial](https://youtu.be/fUsAbRwc9Uo)
+
 1. Navigate to the project directory in your terminal, e.g `cd user/documents/ai-detector-research-tool-UI`
 
 2. Build the Docker images:
-`docker-compose build`
+   `docker-compose build`
 
 3. Start the Docker containers:
-`docker-compose up`
+   `docker-compose up`
 
 4. To close the tool, press `Ctrl+C` in the terminal window running the Docker container and then run the following command:
-`docker-compose down`
+   `docker-compose down`
 
-The tool will now be running at `http://localhost:8080`.
+The tool by default will be running at `http://localhost:8080`.
 
 ## API Endpoints
 
@@ -107,4 +110,3 @@ This project is licensed under the MIT License. For more details, refer to the `
 ## Contributing
 
 We welcome contributions! Please submit a pull request or open an issue to make improvements or fix bugs.
-
